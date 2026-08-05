@@ -99,11 +99,11 @@ table as something to tune, not something to leave as-is forever.
 Once you have a real architectural decision to record:
 
 1. Delete `docs/adr/ADR-0001-example.md` and its line in `docs/decisions.md`'s
-   `## Indeks`.
+   `## Index`.
 2. Let `architect` (deep mode) write the first real one — don't hand-write ADRs yourself
    unless you're intentionally bypassing the pipeline.
 3. As area docs (domain model, API layer, whatever fits your project) grow past roughly
-   150 lines, add a `## Indeks` section near the top per the pattern in `docs/README.md`
+   150 lines, add a `## Index` section near the top per the pattern in `docs/README.md`
    — this is what keeps them cheap to consult later.
 
 ## 6. Adding your own agents/skills

@@ -4,7 +4,7 @@ This file is an **index and usage log**, not content. Full ADR text lives one-pe
 `docs/adr/ADR-NNNN.md`. Never write ADR content directly here — see
 [docs/README.md](README.md) for why (context-window discipline).
 
-## Indeks
+## Index
 
 One line per ADR: number, link, one-sentence summary. Newest at the bottom.
 

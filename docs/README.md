@@ -3,15 +3,15 @@
 This folder holds reference docs Claude (and you) consult mid-task — not narrative
 documentation. Two conventions make that cheap on context:
 
-## 1. One doc per area, each with an `## Indeks` section
+## 1. One doc per area, each with an `## Index` section
 
 As the project grows, split reference docs by area (domain model, API layer, whatever
 areas make sense for your architecture) instead of one giant doc. Give each file a short
-`## Indeks` section near the top — one line per subsection, so the index alone tells you
+`## Index` section near the top — one line per subsection, so the index alone tells you
 whether the full section is worth opening.
 
 ```markdown
-## Indeks
+## Index
 - Ordering flow → §2
 - Auth/roles → §5
 - Webhook handling → §7
@@ -22,8 +22,8 @@ then jump to a specific section with `Read`'s `offset`/`limit`, rather than read
 whole file. This is the single biggest lever for not blowing the context window on docs
 that grow over time.
 
-This template ships no area docs by default — Pizza (the project this convention is
-generalized from) had `domain-model.md`, `api-layer.md`, `application-layer.md`,
+This template ships no area docs by default — the portfolio project this template is
+generalized from had `domain-model.md`, `api-layer.md`, `application-layer.md`,
 `infrastructure-layer.md` because it has four Clean Architecture layers. Your project's
 areas will be different; create the docs that match your actual structure.
 

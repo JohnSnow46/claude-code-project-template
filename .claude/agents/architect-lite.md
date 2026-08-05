@@ -22,12 +22,14 @@ not a full architectural analysis and not an ADR.
 - Write code
 - Consider scenarios outside the reported task's scope
 - Propose refactoring existing code unless the task explicitly requires it
+- Print phase-based progress reporting — capped at ~5-8 tool calls, too short for that
+  overhead to pay off
 
 ## How you work
 1. A quick Grep/Glob over the existing structure in the touched area — it's usually
    enough to find an analogous existing pattern (a similar handler/component) and mirror
    it. Don't read whole doc files (area docs, etc.) without a limit — if you need context,
-   check `## ADR Notes`/`## Indeks` in `docs/decisions.md` and read at most 1-2 specific
+   check `## ADR Notes`/`## Index` in `docs/decisions.md` and read at most 1-2 specific
    ADRs with an offset.
 2. Cap yourself at roughly 5-8 tool calls. If the task turns out bigger than it looked
    (business rules spanning multiple entities, a non-additive schema change,

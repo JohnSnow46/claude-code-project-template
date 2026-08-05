@@ -6,8 +6,8 @@
 
 | Area | File |
 |---|---|
-| [e.g. domain model / core concepts] | `docs/[area].md` (has `## Indeks`) |
-| [e.g. API/interface layer] | `docs/[area].md` (has `## Indeks`) |
+| [e.g. domain model / core concepts] | `docs/[area].md` (has `## Index`) |
+| [e.g. API/interface layer] | `docs/[area].md` (has `## Index`) |
 | [Add one row per area doc you create — see docs/README.md for the pattern] | |
 | Architectural decisions | `docs/decisions.md` = index → `docs/adr/ADR-NNNN.md` = content; `## ADR Notes` = per-task usage log |
 
@@ -64,12 +64,12 @@ Don't design for scale/flexibility the project doesn't need without an explicit 
 ## Using the docs
 
 1. Task in a known area → check `## ADR Notes` in `docs/decisions.md` first.
-2. No hit → `## Indeks` in `docs/decisions.md`, pick specific ADR numbers.
+2. No hit → `## Index` in `docs/decisions.md`, pick specific ADR numbers.
 3. Open (or delegate to `architect`) ONLY `docs/adr/ADR-NNNN.md` for the numbers you
    picked — never the whole `docs/adr/` directory, never `docs/decisions.md` in full as
    a way to reach ADR content.
 4. Never `Read` a file over ~150 lines in the main thread (area docs, single ADRs)
-   without an offset — use its `## Indeks` + `Read` offset/limit, or delegate a specific
+   without an offset — use its `## Index` + `Read` offset/limit, or delegate a specific
    question to a subagent with a capped response (max ~15 points, no quoting, no
    transcribing). Only a summary comes back to the main thread. Exception: a file you're
    about to edit.

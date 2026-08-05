@@ -47,7 +47,7 @@ definition; you don't need to verify it "deserves" full analysis.
    established approach from an existing ADR) — write the **full** decision (Context →
    Decision → Consequences) to a new `docs/adr/ADR-NNNN.md` file (next free number) —
    never directly in `docs/decisions.md`. In `decisions.md`, add only a single line with a
-   link to that file, in the `## Indeks` section — don't touch `## ADR Notes` (that's the
+   link to that file, in the `## Index` section — don't touch `## ADR Notes` (that's the
    per-task log, appended after the whole task finishes, not by you at design time). If
    this is a pure refactor/extension with no new decision (e.g. reorganizing code per an
    already-established pattern) — skip this step, a new ADR would be documentation with no

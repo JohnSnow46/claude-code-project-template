@@ -1,7 +1,7 @@
 # ADR-0001: Example — single-tenant data model
 
 > This is a worked example showing the ADR format, not a real decision for your project.
-> Delete it (and its line in `docs/decisions.md`'s `## Indeks`) once you've written your
+> Delete it (and its line in `docs/decisions.md`'s `## Index`) once you've written your
 > first real ADR.
 
 **Date:** YYYY-MM-DD
