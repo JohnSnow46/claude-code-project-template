@@ -34,8 +34,13 @@ implementation summary). Don't skip an agent in the chosen chain and don't add o
 isn't listed for it.
 
 If mid-chain an agent flags the task as bigger than the chosen mode (e.g.
-`architect-lite` recommends `architect`), stop, re-classify, and restart the chain at the
-right agent for the new mode — don't push through with the wrong agent.
+`architect-lite` recommends `architect`, or `builder`/`reviewer` finds the design
+insufficient), re-classify to the new mode and resume — don't restart. Continue from the
+next agent up in the new mode's chain (e.g. `architect-lite` flagging up to Deep means
+the next step is `architect`, not a second run of `architect-lite`), passing it
+everything the original chain already produced (plan/ADR, implementation summary) as
+input. Don't restart the new mode's chain from its first agent if some of that work
+already happened under the old mode.
 
 ## 3. Log ADR usage (normal/deep only)
 
