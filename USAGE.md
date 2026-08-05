@@ -40,6 +40,39 @@ to leave in:
 
 Run `/context` after your first session to confirm `CLAUDE.md` actually loaded.
 
+## 2b. Fill in `.claude/settings.json`
+
+`CLAUDE.md` isn't the only file with placeholders — `.claude/settings.json` ships with its
+own, under `permissions.allow`:
+
+```json
+"Bash([fill in: install command, e.g. npm install] *)",
+"Bash([fill in: test command, e.g. npm test] *)",
+"Bash([fill in: lint/typecheck command, e.g. npm run lint] *)",
+"Bash([fill in: build command, e.g. npm run build] *)"
+```
+
+What this list does: `permissions.allow` is the set of tool calls Claude can run without
+asking you for approval first. `Read`, `Grep`, `Glob`, and read-only `git status`/`git
+diff`/`git log` are pre-approved out of the box; everything else still prompts until you
+add a rule for it.
+
+The four bracketed entries above are placeholders, not working rules — a literal `[` or
+`]` is not a valid part of a Bash permission specifier, so as shipped these entries never
+match anything and Claude will keep prompting you for your project's install/test/lint/
+build commands every single time. Replace each with your project's actual command, using
+the same `Bash(<command> *)` wildcard form as the rules already in the file, for example:
+
+```json
+"Bash(npm install *)",
+"Bash(npm test *)",
+"Bash(npm run lint *)",
+"Bash(npm run build *)"
+```
+
+Match these to whatever you filled into `CLAUDE.md`'s Commands section (step 2 above) —
+same commands, just expressed as permission rules instead of a shell block.
+
 ## 3. Try the pipeline on a real task
 
 Two ways to trigger the pipeline:

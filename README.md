@@ -24,15 +24,18 @@ under [Attribution](#attribution):
 
 See **[USAGE.md](USAGE.md)** for the full step-by-step walkthrough. Short version:
 
-1. Copy `CLAUDE.md`, `docs/`, `.claude/agents/`, and `.claude/skills/` into your project
-   root.
+1. Copy `CLAUDE.md`, `docs/`, `.claude/agents/`, `.claude/skills/`, and
+   `.claude/settings.json` into your project root.
 2. Fill in the `[bracketed placeholders]` in `CLAUDE.md` — project description, docs
    table, priority order, critical constraints, conventions, commands, environment.
+   `.claude/settings.json` has its own placeholders (permission entries for your
+   install/test/lint/build commands) — see [USAGE.md](USAGE.md) step 2b.
 3. Delete what doesn't apply. If you never do large/risky work, drop `architect` and
    `reviewer` entirely and just use `builder` → `reviewer-lite` for everything. If you
    don't want an ADR system, delete `docs/` and the "Using the docs" section of
    `CLAUDE.md`. Nothing here depends on all of it being present.
-4. Commit `.claude/`, `CLAUDE.md`, and `docs/` to git so your team benefits too.
+4. Commit `.claude/` (including `settings.json`), `CLAUDE.md`, and `docs/` to git so
+   your team benefits too.
 
 ## The pipeline: cost-tiered by default
 
