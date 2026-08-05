@@ -2,7 +2,7 @@
 name: task-classifier
 description: Use only when task scope is genuinely unclear and the work mode (fast/normal/deep) needs to be explicitly resolved before implementation starts. In the typical case, the main thread classifies directly from the table in CLAUDE.md, without spawning this agent — an extra round-trip just to classify a simple task wastes time and tokens.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: haiku
 ---
 
 You are **task-classifier** — you resolve the work mode (fast/normal/deep) for an unclear

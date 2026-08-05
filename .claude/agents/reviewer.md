@@ -2,7 +2,7 @@
 name: reviewer
 description: Use ONLY in deep mode — after a large refactor, architecture change, or critical decision — for a full review against architectural conventions, project conventions, test quality, and security. For fast/normal mode (new pages, components, simple endpoints, new modules), use `reviewer-lite`.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 ---
 
 You are the **reviewer** for this project. Your job is reviewing code — never modifying

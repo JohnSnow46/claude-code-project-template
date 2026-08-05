@@ -50,18 +50,26 @@ The main thread classifies from the table itself — `task-classifier` only gets
 when scope is genuinely unclear, to avoid burning a round-trip just to classify an obvious
 task.
 
+Cost-tiering here means two separate things, and both matter: fewer hops for small tasks
+(fast mode skips `architect`/`reviewer` entirely), *and* each hop that does run uses the
+cheapest model that's actually sufficient for it — see the Model column below. A fast-mode
+task not only skips two agents, its two remaining agents (`builder` on Sonnet,
+`reviewer-lite` on Haiku) are also individually cheaper than the agents a deep-mode task
+runs (`architect` and `reviewer` on Opus). The two effects compound: skipping hops alone
+would still leave every remaining hop priced as if it might be the hard case.
+
 ## `.claude/agents/` — subagents
 
-| Agent | Role |
-|---|---|
-| `task-classifier` | Resolves fast/normal/deep when scope is genuinely unclear (rarely invoked) |
-| `architect` | Full design + ADR-writing — deep mode only |
-| `architect-lite` | A fixed 5-point plan, no ADR — normal mode |
-| `builder` | Implements code and tests, in every mode |
-| `reviewer` | Full review (architecture, tests, security) — deep mode only |
-| `reviewer-lite` | Fast review (blocking issues + security only) — fast/normal mode |
-| `prompt-engineer` | Meta-agent: writes/edits other agents and skills consistently |
-| `debugger` | Root-causes errors and failing tests — orthogonal to the tiers, use any time something's broken |
+| Agent | Role | Model |
+|---|---|---|
+| `task-classifier` | Resolves fast/normal/deep when scope is genuinely unclear (rarely invoked) | Haiku — pattern-matching against a fixed table, not judgment |
+| `architect` | Full design + ADR-writing — deep mode only | Opus — the task reached deep mode by definition, so the decision it's designing is worth the strongest model |
+| `architect-lite` | A fixed 5-point plan, no ADR — normal mode | Sonnet — real design judgment, but scoped and short |
+| `builder` | Implements code and tests, in every mode | Sonnet — day-to-day implementation work |
+| `reviewer` | Full review (architecture, tests, security) — deep mode only | Opus — same reasoning as `architect`: deep-mode stakes justify the strongest reviewer |
+| `reviewer-lite` | Fast review (blocking issues + security only) — fast/normal mode | Haiku — a bounded checklist (build/test, obvious bugs, security basics), not an architecture audit |
+| `prompt-engineer` | Meta-agent: writes/edits other agents and skills consistently | Sonnet — prompt-quality judgment |
+| `debugger` | Root-causes errors and failing tests — orthogonal to the tiers, use any time something's broken | Sonnet — root-causing needs real reasoning regardless of which mode triggered it |
 
 Each agent's frontmatter (`name`, `description`, `tools`, `model`) and behavior were
 checked against Anthropic's current [sub-agents docs](https://code.claude.com/docs/en/sub-agents)
