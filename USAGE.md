@@ -174,16 +174,24 @@ write the file unless you ask it to.
 
 ## 7. Trimming what you don't need
 
-Nothing here is load-bearing for everything else. Common trims:
+Nothing here is load-bearing for everything else. Common trims — each one also touches
+`.claude/skills/feature/SKILL.md`'s chain list (step 2), which names every agent by mode.
+Trimming an agent without updating that list leaves `/feature` delegating to something
+that no longer exists:
 
 - **No deep work expected** (small personal project) → delete `architect`, `reviewer`;
   keep `builder` → `reviewer-lite` as the only path, delete the tiering table from
-  `CLAUDE.md` and replace with a one-line note that it's always the same chain.
+  `CLAUDE.md` and replace with a one-line note that it's always the same chain. In
+  `feature/SKILL.md`, delete the Normal and Deep rows from the chain list, or delete the
+  skill entirely — with only one path, there's nothing left to classify, so `/feature`
+  isn't buying you anything over just asking normally.
 - **Don't want an ADR system** → delete `docs/` entirely and the "Using the docs" section
   of `CLAUDE.md`. `architect` then just designs and hands steps to `builder`, no
-  file-writing.
+  file-writing. In `feature/SKILL.md`, delete step 3 ("Log ADR usage") — it appends to
+  `docs/decisions.md`, which no longer exists.
 - **Single-person project, no code review culture** → delete `reviewer`/`reviewer-lite`,
-  have `builder` report directly to you instead.
+  have `builder` report directly to you instead. In `feature/SKILL.md`'s chain list, drop
+  the reviewer/reviewer-lite step from every mode's chain.
 
 Cut freely — a template you've pruned to fit is more useful than one you're afraid to
 touch.
