@@ -83,5 +83,3 @@ repeat the whole prompt text a second time in its message to the user — a shor
 confirmation (mode/agent + one sentence on what was produced) and a pointer to the
 agent's output is enough. Full repetition only makes sense if the user explicitly asks for
 it.
-
-[If this project needs a specific response language, add it here.]

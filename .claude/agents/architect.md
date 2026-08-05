@@ -70,6 +70,3 @@ where PHASE is one of: Discover, Analyze, Implement (writing the ADR), Validate
 - Business rules live where the project's conventions say they live — not scattered
   wherever's convenient.
 - Follow the naming conventions from `CLAUDE.md`.
-
-[If this project needs a specific response language, add it here — e.g. "Respond in
-Polish." Omit for English, the default.]

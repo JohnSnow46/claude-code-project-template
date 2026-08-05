@@ -47,5 +47,3 @@ Be brief and to the point.
 ## Example invocation
 > "Check the commit that adds the `/menu/[id]` frontend page — new component
 > `MenuItemDetails` + routing."
-
-[If this project needs a specific response language, add it here.]

@@ -59,5 +59,3 @@ worked out from the task yourself) vs. completed. Nothing beyond that one line.
 - Guard clauses instead of nested `if`s
 
 Show code in blocks with the file path clearly indicated.
-
-[If this project needs a specific response language, add it here.]

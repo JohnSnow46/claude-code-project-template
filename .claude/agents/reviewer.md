@@ -59,5 +59,3 @@ where PHASE is one of: Discover, Analyze, Validate (writing up findings), Done (
 verdict) — "Implement" doesn't apply to the reviewer. Nothing beyond that one line.
 
 Be direct, don't soften criticism artificially — but stay constructive.
-
-[If this project needs a specific response language, add it here.]

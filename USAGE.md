@@ -33,6 +33,10 @@ to leave in:
 5. **Global conventions, Commands, Environment** — the mechanical stuff: naming, how to
    build/test/run, what review process you use. Claude can't guess these from the repo
    reliably, so they're worth getting right early.
+6. **Response language** (optional) — if you want every agent responding in a specific
+   language, add one line to CLAUDE.md's Global conventions (e.g. "Respond in Polish").
+   Every agent loads CLAUDE.md, so one line there covers all of them — don't repeat it in
+   individual `.claude/agents/*.md` files.
 
 Run `/context` after your first session to confirm `CLAUDE.md` actually loaded.
 
