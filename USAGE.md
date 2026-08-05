@@ -83,10 +83,14 @@ table as something to tune, not something to leave as-is forever.
 
 - `commit` and `feature` are user-invoked — type `/commit` or `/feature <task>` yourself.
   Claude won't run either on its own.
-- `writing-tests`, `project-conventions`, `writing-skills`,
-  `verification-before-completion` are model-invoked — Claude loads them automatically
-  when relevant. You can also invoke any of them directly (e.g. `/project-conventions`)
-  to force a read.
+- `writing-skills` and `verification-before-completion` are model-invoked — Claude loads
+  them automatically when relevant. You can also invoke either directly (e.g.
+  `/writing-skills`) to force a read.
+- `writing-tests` and `project-conventions` ship as `[fill in]` placeholders, so they're
+  set `disable-model-invocation: true` for now — Claude won't auto-load a skill that's
+  just brackets. Once you've filled in their content, remove the
+  `disable-model-invocation: true` line from each so Claude starts loading them
+  automatically again.
 - If a model-invoked skill never seems to fire when it should, its `description` is
   probably too generic — see the `writing-skills` skill for how to fix that.
 

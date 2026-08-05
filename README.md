@@ -79,8 +79,8 @@ during this template's design.
 |---|---|---|
 | `feature` | User-invoked (`disable-model-invocation: true`) | `/feature <task>` — deterministic classify → agent chain → ADR-log pipeline |
 | `commit` | User-invoked (`disable-model-invocation: true`) | Staging/committing once `reviewer`/`reviewer-lite` gives a ready-to-merge verdict |
-| `writing-tests` | Model-invoked | Background conventions for writing/fixing tests |
-| `project-conventions` | Model-invoked | Detailed conventions too long for `CLAUDE.md` |
+| `writing-tests` | User-invoked for now (`disable-model-invocation: true`) — flip to model-invoked once filled in | Background conventions for writing/fixing tests |
+| `project-conventions` | User-invoked for now (`disable-model-invocation: true`) — flip to model-invoked once filled in | Detailed conventions too long for `CLAUDE.md` |
 | `writing-skills` | Model-invoked | Reference for authoring this repo's own skills/agents well |
 | `verification-before-completion` | Model-invoked | Evidence-before-claims discipline for `builder`/`reviewer`/`reviewer-lite` |
 

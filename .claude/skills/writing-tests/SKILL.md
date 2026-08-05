@@ -1,6 +1,7 @@
 ---
 name: writing-tests
 description: Use when writing new tests or fixing failing tests in this project
+disable-model-invocation: true
 ---
 
 # Writing Tests

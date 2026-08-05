@@ -1,6 +1,7 @@
 ---
 name: project-conventions
 description: Detailed coding conventions and architectural patterns for this project. Use when writing new code, to check naming, structure, and patterns.
+disable-model-invocation: true
 ---
 
 # Project Conventions
