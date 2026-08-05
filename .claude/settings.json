@@ -13,18 +13,5 @@
       "Bash([fill in: lint/typecheck command, e.g. npm run lint] *)",
       "Bash([fill in: build command, e.g. npm run build] *)"
     ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"[PLACEHOLDER: fill in the stack-specific format/lint-on-save command, e.g. npx prettier --write ., ruff format ., gofmt -w .]\""
-          }
-        ]
-      }
-    ]
   }
 }

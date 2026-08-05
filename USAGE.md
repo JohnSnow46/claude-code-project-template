@@ -73,6 +73,33 @@ the same `Bash(<command> *)` wildcard form as the rules already in the file, for
 Match these to whatever you filled into `CLAUDE.md`'s Commands section (step 2 above) —
 same commands, just expressed as permission rules instead of a shell block.
 
+### Format/lint-on-save hook (optional)
+
+`settings.json` ships with no `hooks` key — a placeholder hook that fires on every
+`Edit`/`Write` would otherwise print noise on every file write until you filled it in.
+If you want your formatter/linter to run automatically after Claude edits a file, add a
+`hooks` key at the top level of `settings.json` (a sibling of `permissions`), with your
+stack's actual command in place of the example below:
+
+```json
+"hooks": {
+  "PostToolUse": [
+    {
+      "matcher": "Edit|Write",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "npx prettier --write ."
+        }
+      ]
+    }
+  ]
+}
+```
+
+Swap `npx prettier --write .` for your stack's format/lint-on-save command (e.g. `ruff
+format .`, `gofmt -w .`).
+
 ## 3. Try the pipeline on a real task
 
 Two ways to trigger the pipeline:
