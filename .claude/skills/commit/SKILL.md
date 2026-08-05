@@ -3,6 +3,7 @@ name: commit
 description: Stage and commit the current changes with a descriptive message. Invoke this once reviewer/reviewer-lite gives a ready-to-merge verdict — builder doesn't run git commands on its own.
 disable-model-invocation: true
 allowed-tools: Bash(git status *) Bash(git diff *) Bash(git add *) Bash(git commit *) Bash(git log *)
+disallowed-tools: Bash(git add -A) Bash(git add --all) Bash(git add .) Bash(git add -A .)
 ---
 
 Commit the current changes:
