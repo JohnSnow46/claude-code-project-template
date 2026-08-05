@@ -79,6 +79,12 @@ Each agent's frontmatter (`name`, `description`, `tools`, `model`) and behavior 
 checked against Anthropic's current [sub-agents docs](https://code.claude.com/docs/en/sub-agents)
 during this template's design.
 
+The `architect` and `reviewer` model assignments above assume your Claude Code plan
+grants access to Opus. If it doesn't, change their `model:` field in
+`.claude/agents/architect.md` and `.claude/agents/reviewer.md` to `sonnet` — deep mode
+still gets the most capable model your plan allows, it just won't be a tier above
+`architect-lite`/`builder`.
+
 ## `.claude/skills/` — skills
 
 | Skill | Invocation | Use for |
