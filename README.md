@@ -40,14 +40,17 @@ The core idea, kept from the source project: **most tasks should cost as little 
 possible — cheap model, cheap agent chain, no unnecessary hops — and only escalate when a
 concrete signal demands it.** `CLAUDE.md` has the full classification table; the shape is:
 
-| Mode | Chain | When |
-|---|---|---|
-| **Fast** (default) | `builder` → `reviewer-lite` | Single area, no new business rule, no schema change, no direct security touch |
-| **Normal** | `architect-lite` → `builder` → `reviewer-lite` | A few areas, a simple new rule, an additive migration, an integration |
-| **Deep** | `architect` → `builder` → `reviewer` | A module-boundary/pattern change, a complex rule, a schema change, security/auth/payments touched directly |
+| Mode | Chain |
+|---|---|
+| **Fast** (default) | `builder` → `reviewer-lite` |
+| **Normal** | `architect-lite` → `builder` → `reviewer-lite` |
+| **Deep** | `architect` → `builder` → `reviewer` |
 
-The main thread classifies from the table itself, every time — no dedicated classifier
-agent, to avoid burning a round-trip just to classify an obvious task.
+The signals that decide which mode a task falls into (areas touched, new business rule,
+schema change, security touch) live in `CLAUDE.md`'s "Work modes" table — that's the
+single source of truth, so this one only maps mode → chain. The main thread classifies
+from that table itself, every time — no dedicated classifier agent, to avoid burning a
+round-trip just to classify an obvious task.
 
 Cost-tiering here means two separate things, and both matter: fewer hops for small tasks
 (fast mode skips `architect`/`reviewer` entirely), *and* each hop that does run uses the
