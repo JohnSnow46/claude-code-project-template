@@ -158,7 +158,7 @@ you outgrow the starter:
 |---|---|---|
 | Real portfolio project (this template's origin) | — | The tiered pipeline (fast/normal/deep), the agent roles and their cheap/expensive pairing, the ADR index+log split, the context-reading discipline, the progress-report line format |
 | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT | The model-invoked-vs-user-invoked framing as a named design axis |
-| [obra/superpowers](https://github.com/obra/superpowers) | — | `writing-skills` and `verification-before-completion`, condensed and rewritten, not copied verbatim |
+| [obra/superpowers](https://github.com/obra/superpowers) | MIT | `writing-skills` and `verification-before-completion`, condensed and rewritten, not copied verbatim |
 | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | — | Used to cross-check agent/skill frontmatter conventions against its `tests/fixtures/sample-plugin`; its per-skill human-doc-mirror convention noted above as optional, not built |
 | [zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill) | — | Reviewed for structural ideas. Its per-skill Codex sidecar is the same convention already seen in mattpocock (out of scope — this template targets Claude Code only); its routing-coherence-check script was judged too heavy/domain-specific for a starter. Nothing adopted directly. |
 | Anthropic — [Skills](https://code.claude.com/docs/en/skills), [Sub-agents](https://code.claude.com/docs/en/sub-agents), [Best practices](https://code.claude.com/docs/en/best-practices) | — | Every frontmatter field and convention here is checked against these, current as of this template's writing |
