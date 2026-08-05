@@ -46,9 +46,8 @@ concrete signal demands it.** `CLAUDE.md` has the full classification table; the
 | **Normal** | `architect-lite` → `builder` → `reviewer-lite` | A few areas, a simple new rule, an additive migration, an integration |
 | **Deep** | `architect` → `builder` → `reviewer` | A module-boundary/pattern change, a complex rule, a schema change, security/auth/payments touched directly |
 
-The main thread classifies from the table itself — `task-classifier` only gets spawned
-when scope is genuinely unclear, to avoid burning a round-trip just to classify an obvious
-task.
+The main thread classifies from the table itself, every time — no dedicated classifier
+agent, to avoid burning a round-trip just to classify an obvious task.
 
 Cost-tiering here means two separate things, and both matter: fewer hops for small tasks
 (fast mode skips `architect`/`reviewer` entirely), *and* each hop that does run uses the
@@ -62,7 +61,6 @@ would still leave every remaining hop priced as if it might be the hard case.
 
 | Agent | Role | Model |
 |---|---|---|
-| `task-classifier` | Resolves fast/normal/deep when scope is genuinely unclear (rarely invoked) | Haiku — pattern-matching against a fixed table, not judgment |
 | `architect` | Full design + ADR-writing — deep mode only | Opus — the task reached deep mode by definition, so the decision it's designing is worth the strongest model |
 | `architect-lite` | A fixed 5-point plan, no ADR — normal mode | Sonnet — real design judgment, but scoped and short |
 | `builder` | Implements code and tests, in every mode | Sonnet — day-to-day implementation work |

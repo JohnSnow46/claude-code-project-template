@@ -43,9 +43,8 @@ Don't read the agent files first — just work normally and watch what happens.
 **A small task** ("add a loading spinner to the login button"):
 - Expect: the main thread picks fast mode on its own, `builder` implements it,
   `reviewer-lite` gives a quick pass/fail, then invoke `/commit` yourself once it's green.
-- If you see `task-classifier` or `architect` get spawned for something this small,
-  that's a sign the tiering table's signals need tightening for your project — edit the
-  table in `CLAUDE.md`.
+- If you see `architect` get spawned for something this small, that's a sign the tiering
+  table's signals need tightening for your project — edit the table in `CLAUDE.md`.
 
 **A medium task** ("add a password-reset flow"):
 - Expect: `architect-lite` gives a 5-point plan (goal/files/solution/risks/validation)
@@ -97,9 +96,9 @@ write the file unless you ask it to.
 
 Nothing here is load-bearing for everything else. Common trims:
 
-- **No deep work expected** (small personal project) → delete `architect`, `reviewer`,
-  `task-classifier`; keep `builder` → `reviewer-lite` as the only path, delete the tiering
-  table from `CLAUDE.md` and replace with a one-line note that it's always the same chain.
+- **No deep work expected** (small personal project) → delete `architect`, `reviewer`;
+  keep `builder` → `reviewer-lite` as the only path, delete the tiering table from
+  `CLAUDE.md` and replace with a one-line note that it's always the same chain.
 - **Don't want an ADR system** → delete `docs/` entirely and the "Using the docs" section
   of `CLAUDE.md`. `architect` then just designs and hands steps to `builder`, no
   file-writing.

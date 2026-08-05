@@ -14,9 +14,9 @@
 ## Work modes (`.claude/agents/`)
 
 Default mode is **fast**. The main thread picks the mode itself from the table below —
-no question to the user, and no spawning `task-classifier` just to classify a task. When
-in doubt, pick the lower mode and escalate only if an architectural decision genuinely
-comes up mid-implementation.
+no question to the user, and no dedicated classifier agent to spawn. When in doubt, pick
+the lower mode and escalate only if an architectural decision genuinely comes up
+mid-implementation.
 
 | Signal | Fast (small) | Normal (medium) | Deep (large) |
 |---|---|---|---|
@@ -35,8 +35,6 @@ comes up mid-implementation.
 touch `docs/decisions.md`/area docs — it gives a short plan (goal, files touched,
 solution, risks, validation). `reviewer-lite` checks only what blocks merging
 (build/test, security, obvious bugs) — it skips the full architecture/style audit.
-`task-classifier` exists for genuinely unclear scope — in the typical case the main
-thread classifies directly from the table above, without spawning it.
 
 Number of areas touched is a **supporting** signal, not sufficient on its own: a simple
 CRUD endpoint naturally touches more than one area, and still stays fast mode unless it
