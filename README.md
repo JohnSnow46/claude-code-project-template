@@ -77,6 +77,7 @@ during this template's design.
 
 | Skill | Invocation | Use for |
 |---|---|---|
+| `feature` | User-invoked (`disable-model-invocation: true`) | `/feature <task>` — deterministic classify → agent chain → ADR-log pipeline |
 | `commit` | User-invoked (`disable-model-invocation: true`) | Staging/committing once `reviewer`/`reviewer-lite` gives a ready-to-merge verdict |
 | `writing-tests` | Model-invoked | Background conventions for writing/fixing tests |
 | `project-conventions` | Model-invoked | Detailed conventions too long for `CLAUDE.md` |

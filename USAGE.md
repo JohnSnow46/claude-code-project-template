@@ -38,6 +38,19 @@ Run `/context` after your first session to confirm `CLAUDE.md` actually loaded.
 
 ## 3. Try the pipeline on a real task
 
+Two ways to trigger the pipeline:
+
+- **`/feature <task description>`** — deterministic. Classifies the task against the
+  tiering table, prints the chosen mode and why in one line, runs the matching agent
+  chain, and — for normal/deep mode — appends the `## ADR Notes` entry to
+  `docs/decisions.md` itself once the chain finishes. Use this when you want the
+  classification and ADR logging to happen reliably instead of depending on the main
+  thread remembering to do it.
+- **Just ask normally** — the main thread classifies from the same table on its own for
+  any request, without `/feature`. This still works and is fine for quick, obvious tasks;
+  `/feature` exists for when you want the mode decision and ADR logging made explicit and
+  guaranteed.
+
 Don't read the agent files first — just work normally and watch what happens.
 
 **A small task** ("add a loading spinner to the login button"):
@@ -64,8 +77,8 @@ table as something to tune, not something to leave as-is forever.
 
 ## 4. Working with skills
 
-- `commit` is user-invoked — type `/commit` yourself once `reviewer`/`reviewer-lite` says
-  ready. Claude won't run it on its own.
+- `commit` and `feature` are user-invoked — type `/commit` or `/feature <task>` yourself.
+  Claude won't run either on its own.
 - `writing-tests`, `project-conventions`, `writing-skills`,
   `verification-before-completion` are model-invoked — Claude loads them automatically
   when relevant. You can also invoke any of them directly (e.g. `/project-conventions`)
