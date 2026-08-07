@@ -37,6 +37,21 @@ See **[USAGE.md](USAGE.md)** for the full step-by-step walkthrough. Short versio
 4. Commit `.claude/` (including `settings.json`), `CLAUDE.md`, and `docs/` to git so
    your team benefits too.
 
+### This branch: .NET
+
+`CLAUDE.md`'s Commands, Global conventions, and Environment sections are pre-filled for
+a .NET project (nullable reference types, async conventions, `dotnet` CLI commands). The
+Docs table, Priority order, and Critical constraints are still project-specific —
+fill those in as usual.
+
+Optionally add the [dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills)
+plugin for additional .NET-specific skills on top of this template's generic ones:
+
+```
+/plugin marketplace add Aaronontheweb/dotnet-skills
+/plugin install dotnet-skills
+```
+
 ## The pipeline: cost-tiered by default
 
 The core idea, kept from the source project: **most tasks should cost as little as

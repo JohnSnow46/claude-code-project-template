@@ -97,26 +97,37 @@ Delete this section if the project has none yet.]
 
 ## Global conventions
 
-- [Naming, nullability/typing defaults, async conventions, error-handling pattern —
-  whatever differs from the language/framework default.]
-- [Module structure: one handler/component = one file = one test, if that's the
-  convention.]
-- [Test naming convention, e.g. `MethodName_Scenario_ExpectedResult`.]
+- Nullable reference types enabled (`<Nullable>enable</Nullable>`); don't use the `!`
+  null-forgiving operator except right after a check that already proves non-null.
+- PascalCase for types/public members, camelCase for locals/parameters, `_camelCase` for
+  private fields, `I` prefix for interfaces.
+- Async methods return `Task`/`Task<T>`, suffixed `Async`; never `async void` except
+  event handlers. Propagate `CancellationToken` through async call chains that can be
+  cancelled from an outer scope (HTTP request, background job).
+- Exceptions for unexpected/exceptional failures; [if this project uses a Result/OneOf
+  pattern for expected domain failures instead, replace this line and say so — don't mix
+  both styles in the same layer].
+- One class/interface per file, filename matches the type name. Tests live in a parallel
+  test project mirroring the source namespace (e.g. `MyApp.Domain` →
+  `MyApp.Domain.Tests`).
+- Test naming: `MethodName_Scenario_ExpectedResult`.
 
 ## Commands
 
 ```bash
-[install]
-[test]
-[lint/typecheck]
-[build]
-[run/dev]
+dotnet restore
+dotnet test
+dotnet format --verify-no-changes
+dotnet build
+dotnet run --project src/[ProjectName]
 ```
 
 ## Environment
 
-[Editor/IDE, review process (local diff vs GitHub/GitLab PRs), CI setup, anything about
-the dev environment Claude can't infer from the repo.]
+Visual Studio / JetBrains Rider / VS Code with C# Dev Kit. SDK version pinned via
+`global.json` so local and CI use the same runtime. [Review process: local diff vs
+GitHub/GitLab PRs.] CI: [e.g. GitHub Actions running `dotnet restore && dotnet build &&
+dotnet test` on each PR].
 
 ---
 
