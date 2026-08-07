@@ -37,6 +37,10 @@ See **[USAGE.md](USAGE.md)** for the full step-by-step walkthrough. Short versio
 4. Commit `.claude/` (including `settings.json`), `CLAUDE.md`, and `docs/` to git so
    your team benefits too.
 
+Starting a .NET project? The `dotnet` branch has `CLAUDE.md`'s Commands/Global
+conventions/Environment sections pre-filled and a note on the
+[dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) plugin.
+
 ## The pipeline: cost-tiered by default
 
 The core idea, kept from the source project: **most tasks should cost as little as
