@@ -250,9 +250,10 @@ def check_workflow_rules() -> None:
     for needle, what in required.items():
         if needle not in text:
             err(claude, f"missing {what}")
-    fast = re.search(r"^\| \*\*Fast\*\* \|(.*)$", text, re.M)
-    if not fast or "No subagents" not in fast.group(1) or re.search(r"`[a-z-]+`", fast.group(1)):
-        err(claude, "Fast workflow must run without subagents")
+    for mode in ("Trivial", "Fast"):
+        row = re.search(rf"^\| \*\*{mode}\*\* \|(.*)$", text, re.M)
+        if not row or "No subagents" not in row.group(1) or re.search(r"`[a-z-]+`", row.group(1)):
+            err(claude, f"{mode} workflow must run without subagents")
     normal = re.search(r"^\| \*\*Normal\*\* \|(.*)$", text, re.M)
     if normal and ("`architect`" in normal.group(1) or "`reviewer`" in normal.group(1)):
         err(claude, "Normal workflow must not use full architect/reviewer")

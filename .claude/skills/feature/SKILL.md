@@ -1,6 +1,6 @@
 ---
 name: feature
-description: Run a task through this repo's Fast/Normal/Deep workflow with an explicit mode decision, bounded review loop and result contract. Use for `/feature <task description>`.
+description: Run a task through this repo's Trivial/Fast/Normal/Deep workflow with an explicit mode decision, bounded review loop and result contract. Use for `/feature <task description>`.
 argument-hint: [task description]
 disable-model-invocation: true
 ---
@@ -14,10 +14,12 @@ If `$ARGUMENTS` names a stage from a plan doc, read that stage first — it may 
 the mode. Otherwise score against the `CLAUDE.md` table, apply the **security override**,
 pick the lowest mode that fits. Output one line first:
 
-`Mode: <Fast|Normal|Deep> — <reason>`
+`Mode: <Trivial|Fast|Normal|Deep> — <reason>`
 
 ## 2. Run
 
+- **Trivial** — make the edit yourself; run only the gate it can affect (none for
+  comment/prose-only edits). No subagents.
 - **Fast** — implement yourself, run the quality gates, self-review against the
   security baseline. No subagents.
 - **Normal** — `architect-lite` only if contracts/design are unclear → implement (you, or

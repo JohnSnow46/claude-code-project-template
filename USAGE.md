@@ -94,6 +94,8 @@ empty means "not configured yet": skipped under `solo`, a failure under `team`/
 
 Just ask. The main thread picks a mode from `CLAUDE.md`:
 
+- **"Fix the typo in the signup page heading"** → Trivial. Claude edits the line, skips
+  the gates (prose only) and says so. No self-review write-up, no subagents.
 - **"Make the login button spinner match the brand color"** → Fast. Claude edits the
   file, runs the relevant check, self-reviews, done. If you see subagents here, the mode
   table is too loose for your project — tighten it.

@@ -8,7 +8,8 @@ internal tools, CLIs, prototypes headed for production. Any language, any framew
 Three ideas:
 
 - **Speed first.** Most tasks are small, so the default path is the main Claude thread
-  doing the work directly — no subagents, no plans, no reports.
+  doing the work directly — no subagents, no plans, no reports. A one-line typo fix
+  doesn't even run the full gate suite.
 - **Security by default.** A short security baseline applies to every change, a hook
   blocks dangerous git operations and secret commits, and security-sensitive work is
   always escalated — however small the diff.
@@ -65,13 +66,15 @@ scripts/
 ```mermaid
 flowchart LR
     T[Task] --> C{Classify}
+    C -->|1 file, no logic change| TR[Trivial<br/>main thread edits<br/>affected gate only]
     C -->|small, low risk| F[Fast<br/>main thread implements<br/>checks + self-review]
     C -->|feature, 2-3 modules,<br/>DB change| N[Normal<br/>architect-lite if unclear<br/>implement<br/>reviewer-lite]
     C -->|architecture, complex migration,<br/>OR touches auth/payments/<br/>crypto/secrets/PII| D[Deep<br/>architect if a design decision<br/>builder<br/>reviewer + security-auditor]
-    F --> R[Result]
+    TR --> R[Result]
+    F --> R
     N --> R
     D --> R
-    B[Security baseline] -.applies to.-> F & N & D
+    B[Security baseline] -.applies to.-> TR & F & N & D
 ```
 
 The main thread picks the mode itself from the table in `CLAUDE.md` — no classifier
@@ -80,17 +83,18 @@ signal appears.
 
 | Mode | When | What runs |
 |---|---|---|
-| **Fast** (default) | UI, styling, small fixes, simple CRUD, docs, config | Main thread only, acting as builder: implement → quality gates → self-review against the baseline |
+| **Trivial** (default) | 1 file, a few lines, no logic change: typo, copy, config value, rename within one file, comment/doc edit | Main thread only: edit → the one gate the change can affect (none for prose) |
+| **Fast** (next step up) | UI, styling, small fixes, simple CRUD, docs, config | Main thread only, acting as builder: implement → quality gates → self-review against the baseline |
 | **Normal** | New feature with logic, 2-3 modules, additive DB change, integration | `architect-lite` *only if* contracts/design are unclear → implement (main thread, or `builder` for large work) → quality gates → `reviewer-lite` |
 | **Deep** | Architecture/boundary change, complex migration, **anything directly touching auth, permissions, payments, crypto, secrets or sensitive personal data** | `architect` *only if* there's a design decision (else a 5-line threat note) → `builder` → quality gates → `reviewer` ∥ `security-auditor` |
 
 **Optional agents**, Normal/Deep only and only when their signal exists: `test-engineer`
 (user-facing flow or integration boundary changed, project has E2E/integration tests) and
-`performance-analyst` (a concrete slowdown, budget or hot-path change). Never in Fast.
+`performance-analyst` (a concrete slowdown, budget or hot-path change). Never in Trivial or Fast.
 
 **Quality gates:** `bash scripts/quality-gates.sh` runs test → lint → typecheck →
-build → security from `.claude/quality-gates.conf`. Every mode runs it before reporting
-`completed` and quotes the `RESULT:` line. Under `team`/`high-security` an unconfigured
+build → security from `.claude/quality-gates.conf`. Every mode runs it (Trivial: only the gate the
+edit can affect) before reporting `completed` and quotes the `RESULT:` line. Under `team`/`high-security` an unconfigured
 gate fails; `none` declares it not applicable.
 
 **Guardrails on the pipeline itself:**

@@ -11,15 +11,15 @@
 
 ## Work modes
 
-Pick the mode yourself — no question to the user, no classifier agent. Default **Fast**;
-when unsure, pick the lower mode and escalate if a real signal appears mid-task.
+Pick the mode yourself (no question, no classifier agent). Default **Trivial**, then
+**Fast**; when unsure, pick the lower mode and escalate if a real signal appears mid-task.
 
-| Signal | Fast | Normal | Deep |
-|---|---|---|---|
-| Scope | 1 area, small change | new feature, 2-3 modules, integration | module boundary/pattern change |
-| Business rule | none | single, simple | complex / multi-entity |
-| Schema/migration | none | additive | changes existing data/relations |
-| Examples | UI, styling, small fix, simple CRUD, docs, config | endpoint with logic, new module, DB change | major refactor, critical infra |
+| Signal | Trivial | Fast | Normal | Deep |
+|---|---|---|---|---|
+| Scope | 1 file, a few lines | 1 area, small change | new feature, 2-3 modules, integration | module boundary/pattern change |
+| Business rule | none (no logic change) | none | single, simple | complex / multi-entity |
+| Schema/migration | none | none | additive | changes existing data/relations |
+| Examples | typo, copy, config value, rename within one file, comment/doc edit | UI, styling, small fix, simple CRUD, docs, config | endpoint with logic, new module, DB change | major refactor, critical infra |
 
 **Security override:** a change that directly touches authentication, authorization,
 permissions/roles, payments, cryptography, secrets, or sensitive personal data is
@@ -28,6 +28,7 @@ not — apply the baseline below.
 
 | Mode | Workflow |
 |---|---|
+| **Trivial** | You make the edit → run only the gate it can affect (none for comment/prose-only edits; say "not run: prose only"). No subagents. |
 | **Fast** | You implement (you are the builder) → quality gates → self-review against the security baseline. No subagents. |
 | **Normal** | Short assessment (`architect-lite` only if contracts/design are unclear) → implement (you, or `builder` if the work is large) → quality gates → `reviewer-lite`. |
 | **Deep** | `architect` (only for a real design decision; for a security change without one, write a 5-line threat note yourself) → `builder` → quality gates → `reviewer` ∥ `security-auditor` (if security-sensitive). |
@@ -98,8 +99,7 @@ run is listed as "not run: <reason>", never omitted.
 
 ## Git
 
-Commit/push only when asked (`/commit`). Stage files by name, review the staged diff,
-never bypass hooks (`--no-verify`) or force-push.
+Commit/push only when asked (`/commit`). Stage by name, review the staged diff, no `--no-verify`/force-push.
 
 **Priority order:** [e.g. "1) correctness/security, 2) working feature, 3) consistency".
 Don't design for scale the project doesn't need.]
