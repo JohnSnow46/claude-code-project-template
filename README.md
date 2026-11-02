@@ -17,7 +17,7 @@ Three ideas:
 ## Install
 
 ```bash
-cp -r CLAUDE.md docs .claude scripts .github .gitattributes .pre-commit-config.yaml /path/to/your-project/
+cp -r CLAUDE.md THIRD_PARTY_NOTICES.md docs .claude scripts .github .gitattributes .pre-commit-config.yaml /path/to/your-project/
 cd /path/to/your-project
 bash scripts/quality-gates.sh --detect      # suggested gates for your stack → .claude/quality-gates.conf
 python3 scripts/configure.py profile solo   # or team / high-security
@@ -239,12 +239,14 @@ validator catches it.
 
 ## Attribution
 
-| Source | What was taken |
-|---|---|
-| A real portfolio project | The three-mode pipeline, agent roles, ADR index + log split, context-reading discipline |
-| [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) | Model-invoked vs. user-invoked as a design axis |
-| [obra/superpowers](https://github.com/obra/superpowers) (MIT) | `writing-skills` and `verification-before-completion`, condensed and rewritten |
-| [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | Cross-check of agent/skill frontmatter conventions |
-| Anthropic — [Skills](https://code.claude.com/docs/en/skills), [Sub-agents](https://code.claude.com/docs/en/sub-agents), [Hooks](https://code.claude.com/docs/en/hooks), [Best practices](https://code.claude.com/docs/en/best-practices) | Frontmatter, hooks and permissions conventions |
+| Source | License | What was taken |
+|---|---|---|
+| A real portfolio project | — (own work) | The three-mode pipeline, agent roles, ADR index + log split, context-reading discipline |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | MIT | Model-invoked vs. user-invoked as a design axis |
+| [obra/superpowers](https://github.com/obra/superpowers) | MIT | `writing-skills` and `verification-before-completion`, condensed and rewritten |
+| [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | MIT | Cross-check of agent/skill frontmatter conventions |
+| Anthropic — [Skills](https://code.claude.com/docs/en/skills), [Sub-agents](https://code.claude.com/docs/en/sub-agents), [Hooks](https://code.claude.com/docs/en/hooks), [Best practices](https://code.claude.com/docs/en/best-practices) | — (documentation) | Frontmatter, hooks and permissions conventions |
+
+Copyright notices for adapted MIT content: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 MIT licensed — see [LICENSE](LICENSE).

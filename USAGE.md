@@ -5,7 +5,7 @@ Step by step. [README.md](README.md) is the overview.
 ## 1. Copy it in
 
 ```bash
-cp -r CLAUDE.md docs .claude scripts .github .gitattributes .pre-commit-config.yaml /path/to/your-project/
+cp -r CLAUDE.md THIRD_PARTY_NOTICES.md docs .claude scripts .github .gitattributes .pre-commit-config.yaml /path/to/your-project/
 ```
 
 Merge by hand anything your project already has (`CLAUDE.md`, `.github/workflows/`,

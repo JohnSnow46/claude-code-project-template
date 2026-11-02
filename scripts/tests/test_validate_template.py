@@ -18,7 +18,7 @@ def run(root: Path) -> subprocess.CompletedProcess:
 class ValidateTemplateTest(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
-        for item in ("CLAUDE.md", "README.md", "USAGE.md", "LICENSE", "docs", ".claude", ".github", "scripts"):
+        for item in ("CLAUDE.md", "README.md", "USAGE.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "docs", ".claude", ".github", "scripts"):
             src = ROOT / item
             dst = self.tmp / item
             if src.is_dir():
