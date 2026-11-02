@@ -1,5 +1,7 @@
 # Claude Code project template
 
+[![checks](https://github.com/JohnSnow46/claude-code-project-template/actions/workflows/checks.yml/badge.svg)](https://github.com/JohnSnow46/claude-code-project-template/actions/workflows/checks.yml)
+
 A lightweight Claude Code setup for small and medium projects — web apps, APIs, SaaS,
 internal tools, CLIs, prototypes headed for production. Any language, any framework.
 
@@ -25,6 +27,25 @@ workflow? Merge by hand.
 
 Starting a .NET project? The `dotnet` branch has `CLAUDE.md` pre-filled for .NET (it may
 lag behind `master`).
+
+## What's in the box
+
+```
+CLAUDE.md                     project instructions: modes, security baseline, result contract
+USAGE.md                      step-by-step setup
+docs/                         ADR index + example ADR, docs conventions, v2 audit
+.claude/
+  settings.json               permissions (ask before push, deny bulk add/.env reads) + hook
+  hooks/guard-bash.sh         blocks unsafe git commands, secret-scans every commit
+  hooks/scan-secrets.sh       stack-agnostic secret scanner (bash + git + grep)
+  agents/                     7 subagents
+  skills/                     6 skills
+scripts/
+  validate_template.py        config validator (Python stdlib only)
+  check-deps.sh               optional dependency audit, auto-detects your stack
+  tests/                      tests for the validator and the hook
+.github/workflows/checks.yml  CI: secret scan, validation, tests, optional dep audit
+```
 
 ## How it works
 
