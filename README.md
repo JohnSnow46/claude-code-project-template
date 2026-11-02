@@ -50,7 +50,7 @@ lag behind `master`).
 ```
 CLAUDE.md                     project instructions: mode table, baseline, gates, result block
 USAGE.md                      step-by-step setup
-docs/                         security reference, ADR index + example ADR, docs conventions, v2 audit
+docs/                         security reference, ADR index + notes archive + example ADR, docs conventions, v2 audit
 .claude/
   settings.json               permissions (deny secrets at any depth, ask on push/destructive git) + hooks
   profiles/                   solo / team / high-security overlays for settings.json

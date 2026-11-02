@@ -56,7 +56,8 @@ production deploy, `security-auditor` runs once over everything since the last d
 - Read only files related to the task; grep before reading; widen scope only when needed.
 - ADRs: `## ADR Notes` → `## Index` in `docs/decisions.md` → open only the specific
   `docs/adr/ADR-NNNN.md`. Files over ~150 lines: read via their `## Index` + offset.
-- Don't ask what you can check (`git status`, `git log`, repo files). Ask only product
-  decisions, one round max.
-- If an ADR shaped the implementation, add an entry at the top of `## ADR Notes`.
+- Don't ask what you can check (`git status`, `git log`, repo files). Batch questions;
+  ask only for decisions that can't be inferred from the repo.
+- If an ADR shaped the implementation, add an entry at the top of `## ADR Notes`; past
+  ~20 entries, move the oldest to `docs/adr-notes-archive.md`.
 - No reports or docs for trivial tasks.

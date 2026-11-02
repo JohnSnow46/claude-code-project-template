@@ -34,6 +34,10 @@ content lives one-per-file in `adr/ADR-NNNN.md`. Never duplicate ADR content int
 index — see `decisions.md` for the full rule and the `architect` agent for who's allowed
 to write ADRs.
 
+`## ADR Notes` keeps only the last ~20 entries; older ones move to
+`adr-notes-archive.md`, so the log loaded mid-task stays short. Nobody reads the archive
+unless they're tracing an old decision.
+
 `adr/ADR-0001-example.md` shows the format. Delete it once you've written a real one.
 
 ## Why this matters

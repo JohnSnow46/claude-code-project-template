@@ -17,6 +17,9 @@ Per-task usage log, newest entry at the top. The main thread adds one entry afte
 whose implementation was actually shaped by an ADR (any mode) — see "Using the docs"
 in `.claude/skills/workflow/SKILL.md`. No entry when no ADR mattered.
 
+Rotation: keep the last ~20 entries here. When adding one pushes past that, move the
+oldest to the top of [adr-notes-archive.md](adr-notes-archive.md) (it stays newest-first).
+
 Template for a new entry:
 
 ```markdown
