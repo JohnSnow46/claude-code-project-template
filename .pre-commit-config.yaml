@@ -1,0 +1,15 @@
+# Optional: if your team uses the pre-commit framework (https://pre-commit.com), this runs
+# the same secret checks as scripts/git-hooks/pre-commit. Install with `pre-commit install`.
+# Without the framework, use `bash scripts/install-git-hooks.sh` instead — not both.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e  # v8.30.1 (pinned by SHA: tags can move)
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: scan-secrets
+        name: scan-secrets (built-in patterns + secret file names)
+        entry: bash .claude/hooks/scan-secrets.sh --staged
+        language: system
+        pass_filenames: false

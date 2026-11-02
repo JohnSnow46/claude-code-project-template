@@ -5,11 +5,23 @@ Step by step. [README.md](README.md) is the overview.
 ## 1. Copy it in
 
 ```bash
-cp -r CLAUDE.md docs .claude scripts .github /path/to/your-project/
+cp -r CLAUDE.md docs .claude scripts .github .gitattributes .pre-commit-config.yaml /path/to/your-project/
 ```
 
-Merge by hand anything your project already has (`CLAUDE.md`, `.github/workflows/`).
-Add the secret entries from this repo's `.gitignore` to yours.
+Merge by hand anything your project already has (`CLAUDE.md`, `.github/workflows/`,
+`.gitattributes`). Add the secret entries from this repo's `.gitignore` to yours.
+`.gitattributes` keeps the hook scripts on LF line endings; a CRLF checkout on Windows
+breaks bash.
+
+Then, once per clone:
+
+```bash
+python3 scripts/configure.py profile solo     # or team / high-security — see README "Profiles"
+bash scripts/install-git-hooks.sh             # secret scan before every commit
+```
+
+Install [gitleaks](https://github.com/gitleaks/gitleaks#installing). It's optional for
+`solo`, required for `team` and `high-security`.
 
 ## 2. Fill in `CLAUDE.md`
 
@@ -43,17 +55,20 @@ Commands:
 
 Don't put `[placeholders]` inside `Bash(...)` — they'd match literally.
 
-**`permissions.ask`** — `git push` always asks.
+**`permissions.ask`** — `git push`, `git reset --hard`, `git clean` always ask.
 
-**`permissions.deny`** — wins over `allow`. Ships with bulk `git add`, force push, and
-`Read` of `.env`, `.env.*`, `*.pem`, `*.key`. Note `.env.*` also hides `.env.example`
-from `Read`; if Claude needs it, narrow the rule (e.g. to `.env.local`,
-`.env.production`).
+**`permissions.deny`** — wins over `allow`. Ships with bulk `git add`, force/mirror
+push, and `Read`/`Edit` of `.env`, `.env.*`, keys and keystores **at any depth**, plus
+`~/.ssh`, `~/.aws`, `~/.gnupg`. `.env.example/.sample/.template` are carved out with
+`!` rules, so Claude can still read the template.
 
-**`hooks`** — `guard-bash.sh` runs before every Bash call. It does nothing unless the
-command involves git; then it blocks bulk staging, `commit -a`, `--no-verify` and force
-push anywhere in the command, and runs the secret scan on `git commit`. Needs `bash` (Git
-Bash on Windows, which Claude Code already uses).
+**`hooks`** — two PreToolUse hooks, both fail closed (`onFailure: block`):
+`guard-bash.sh` before every Bash call and `guard-files.sh` before the file tools. What
+they deny, what they ask about, and their limits: [docs/security.md](docs/security.md).
+Needs `bash` (Git Bash on Windows, which Claude Code already uses).
+
+Don't hand-edit rules a profile owns. Switch profiles with `scripts/configure.py`. The
+validator flags drift between `settings.json` and its declared profile.
 
 Optional format-on-save hook — add next to the existing one, with your formatter:
 
@@ -64,7 +79,18 @@ Optional format-on-save hook — add next to the existing one, with your formatt
 ]
 ```
 
-## 4. Work normally
+## 4. Quality gates
+
+```bash
+bash scripts/quality-gates.sh --detect   # suggestion for your stack
+```
+
+Copy the suggestion into `.claude/quality-gates.conf` and check each command runs. Write
+`none` for a gate your stack doesn't have (e.g. `typecheck=none` for Go). Leaving a gate
+empty means "not configured yet": skipped under `solo`, a failure under `team`/
+`high-security`. Claude runs the gates before reporting any task as done; so does CI.
+
+## 5. Work normally
 
 Just ask. The main thread picks a mode from `CLAUDE.md`:
 
@@ -76,6 +102,9 @@ Just ask. The main thread picks a mode from `CLAUDE.md`:
 - **"Add 2FA to login"** → Deep (touches authentication). Threat analysis, `builder`,
   `reviewer` + `security-auditor`. If it shows up as Fast or Normal, the security
   override isn't being applied — check `CLAUDE.md`.
+- **"Checkout times out with 500 items in the cart"** → Normal, with
+  `performance-analyst` to measure first. A changed checkout flow with a Playwright
+  suite also gets `test-engineer`.
 
 Want each step visible? Use `/feature <task>`. When a task ends `blocked` you get the
 open findings — decide, then ask again. Commit with `/commit` when you're happy.
@@ -83,14 +112,14 @@ open findings — decide, then ask again. Commit with `/commit` when you're happ
 Before a production deploy, ask for a `security-auditor` pass over everything since the
 last deploy.
 
-## 5. Skills
+## 6. Skills
 
 - `/feature` and `/commit` run only when you type them.
 - `writing-skills` and `verification-before-completion` load automatically when relevant.
 - `writing-tests` and `project-conventions` are placeholders. Fill them in, then delete
   the `disable-model-invocation: true` line so Claude loads them on its own.
 
-## 6. Docs and ADRs
+## 7. Docs and ADRs
 
 When you make a real architectural decision:
 
@@ -98,20 +127,22 @@ When you make a real architectural decision:
 2. Let `architect` (Deep mode) write the ADR, or write it yourself in the same format.
 3. When an area doc grows past ~150 lines, give it a `## Index` (see `docs/README.md`).
 
-## 7. Checks and CI
+## 8. Checks and CI
 
 `.github/workflows/checks.yml` runs on every push:
 
-- **Mandatory** (any stack): secret scan, config validation, tests for the validator and
-  hook. Needs only bash, git, Python 3 — nothing to install.
-- **Optional**: `scripts/check-deps.sh` finds manifests (npm/pnpm/yarn, pip, Go, Cargo,
-  Bundler, Composer, .NET) and runs the audit tool if installed. Add your toolchain's
-  setup step to that job, or delete the job.
-- **Yours**: add build/test/lint jobs for your project.
+- **`gates`** (Linux, macOS, Windows): `scripts/quality-gates.sh`. That's your
+  test/lint/typecheck/build from `.claude/quality-gates.conf`, then the security gate
+  (secret scan with gitleaks on Linux, plus `check-deps.sh`, which audits
+  npm/pnpm/yarn, pip, Go, Cargo, Bundler, Composer and .NET when the tool is installed).
+  Add your toolchain's setup step (setup-node, setup-python, ...) before it.
+- **`gitleaks`**: full-history scan with a pinned, checksum-verified gitleaks. To update
+  it, change `GITLEAKS_VERSION` and `GITLEAKS_SHA256` together (from the release's
+  `checksums.txt`).
 
 Run the same locally — see the Checks section in the README.
 
-## 8. Adding or trimming agents and skills
+## 9. Adding or trimming agents and skills
 
 - **Add** — read `writing-skills`, end agents with the result block from `CLAUDE.md`,
   then run `python scripts/validate_template.py`.
@@ -120,3 +151,4 @@ Run the same locally — see the Checks section in the README.
 - Common trims: no deep work → drop `architect` and `reviewer`; no ADRs → drop `docs/`
   and the ADR lines in `CLAUDE.md`; solo project with no review habit → keep
   `reviewer-lite` anyway for Normal work, it's the cheapest independent check you have.
+  No E2E tests or perf work → drop `test-engineer`/`performance-analyst`.

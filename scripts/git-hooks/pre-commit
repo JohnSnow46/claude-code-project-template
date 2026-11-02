@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Git pre-commit hook: secret scan of the staged changes for every commit — yours and
+# Claude's. Built-in patterns + gitleaks when installed (required under the team and
+# high-security profiles). Installed by scripts/install-git-hooks.sh.
+# Prefer the pre-commit framework? .pre-commit-config.yaml runs the same checks.
+root=$(git rev-parse --show-toplevel) || exit 1
+if [ -z "${REQUIRE_GITLEAKS:-}" ]; then
+  REQUIRE_GITLEAKS=$(sed -n -E 's/.*"REQUIRE_GITLEAKS"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' "$root/.claude/settings.json" 2>/dev/null | head -1)
+  export REQUIRE_GITLEAKS
+fi
+if ! bash "$root/.claude/hooks/scan-secrets.sh" --staged; then
+  echo "pre-commit: commit blocked — staged changes look like they contain secrets." >&2
+  echo "Unstage them (git restore --staged <file>) and move the value to env/secret storage." >&2
+  exit 1
+fi

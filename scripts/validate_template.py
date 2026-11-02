@@ -7,6 +7,8 @@ consistent, not that Claude will follow it.
 Usage: python scripts/validate_template.py [repo_root]
 Exit 0 = all checks pass, 1 = errors (listed on stderr).
 """
+from __future__ import annotations  # `X | None` annotations on Python 3.9
+
 import json
 import re
 import sys
@@ -19,15 +21,20 @@ MAX_DESCRIPTION_CHARS = 450      # descriptions load into every session
 MAX_SKILL_WORDS = 600            # skill bodies load whole when used
 MAX_AGENT_WORDS = 600
 MAX_CLAUDE_MD_LINES = 130        # loads into every conversation
-READ_ONLY_AGENTS = re.compile(r"(reviewer|auditor)")
-AGENT_LIKE = re.compile(r"^[a-z]+(-[a-z]+)*-(architect|builder|reviewer|auditor|debugger|engineer|lite)$"
+READ_ONLY_AGENTS = re.compile(r"(reviewer|auditor|analyst)")
+AGENT_LIKE = re.compile(r"^[a-z]+(-[a-z]+)*-(architect|builder|reviewer|auditor|debugger|engineer|analyst|lite)$"
                         r"|^(architect|builder|reviewer|debugger)$")
 BUILTIN_COMMANDS = {"compact", "context", "clear", "help", "config", "model", "agents", "init",
                     "memory", "permissions", "hooks", "review", "code-review", "security-review"}
 # Historical docs may name agents that no longer exist.
 REFERENCE_EXEMPT = {"docs/audit-v2.md"}
 REQUIRED_DENY = ["Bash(git add -A)", "Bash(git add .)", "Bash(git add --all)",
-                 "Bash(git push --force *)", "Read(./.env)"]
+                 "Bash(git push --force *)", "Read(**/.env)", "Read(**/.env.*)",
+                 "Edit(**/.env)", "Edit(**/.env.*)"]
+# Each hook script and the tools its matcher must cover.
+REQUIRED_HOOKS = {"guard-bash.sh": {"Bash"},
+                  "guard-files.sh": {"Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Grep"}}
+GATES = ("test", "lint", "typecheck", "build")
 FORBIDDEN_ALLOW = re.compile(r"^Bash(\(\*\))?$|^Bash\((git push|git add|rm |sudo|curl|wget)")
 
 errors: list[str] = []
@@ -152,15 +159,80 @@ def check_settings() -> None:
             err(path, f"permissions.allow must not pre-approve {rule}")
     if not any("git push" in r for r in perms.get("ask", []) + perms.get("deny", [])):
         err(path, "git push must be in permissions.ask (or deny)")
-    commands = [h.get("command", "")
-                for entry in settings.get("hooks", {}).get("PreToolUse", [])
-                if entry.get("matcher") == "Bash"
-                for h in entry.get("hooks", [])]
-    if not any("guard-bash.sh" in c for c in commands):
-        err(path, "PreToolUse Bash hook must run .claude/hooks/guard-bash.sh")
-    for script in ("guard-bash.sh", "scan-secrets.sh"):
-        if not (ROOT / ".claude/hooks" / script).exists():
-            err(path, f"missing .claude/hooks/{script}")
+    covered: dict[str, set[str]] = {}
+    for entry in settings.get("hooks", {}).get("PreToolUse", []):
+        tools = {t.strip() for t in re.split(r"[|,]", entry.get("matcher", ""))}
+        for h in entry.get("hooks", []):
+            for script in re.findall(r"\.claude/hooks/([\w.-]+\.sh)", h.get("command", "")):
+                covered.setdefault(script, set()).update(tools)
+                if not (ROOT / ".claude/hooks" / script).exists():
+                    err(path, f"hook runs missing .claude/hooks/{script}")
+                if h.get("onFailure") != "block":
+                    err(path, f"hook {script} must set \"onFailure\": \"block\" (fail closed)")
+    for script, tools in REQUIRED_HOOKS.items():
+        missing = tools - covered.get(script, set())
+        if missing:
+            err(path, f"PreToolUse hook {script} must cover {', '.join(sorted(missing))}")
+    if not (ROOT / ".claude/hooks/scan-secrets.sh").exists():
+        err(path, "missing .claude/hooks/scan-secrets.sh")
+    check_profiles(settings)
+
+
+def profile_state() -> dict | None:
+    path = ROOT / ".claude/profile-state.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        err(path, f"invalid JSON: {e}")
+        return None
+
+
+def check_profiles(settings: dict) -> None:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import configure  # noqa: E402  (stdlib-only sibling module)
+    folder = ROOT / ".claude/profiles"
+    found = {}
+    for p in sorted(folder.glob("*.json")):
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            err(p, f"invalid JSON: {e}")
+            continue
+        if not data.get("description") or not isinstance(data.get("settings"), dict):
+            err(p, "profile needs 'description' and a 'settings' object")
+            continue
+        if data["settings"].get("env", {}).get("CLAUDE_TEMPLATE_PROFILE") != p.stem:
+            err(p, f"settings.env.CLAUDE_TEMPLATE_PROFILE must be '{p.stem}'")
+        found[p.stem] = data
+    for name in ("solo", "team", "high-security"):
+        if name not in found:
+            err(".claude/profiles", f"missing profile '{name}'")
+    current = settings.get("env", {}).get("CLAUDE_TEMPLATE_PROFILE")
+    if current not in found:
+        err(".claude/settings.json", f"env.CLAUDE_TEMPLATE_PROFILE '{current}' is not a profile in .claude/profiles/")
+    elif configure.apply_profile(settings, current, found, profile_state())[0] != settings:
+        err(".claude/settings.json", f"out of sync with profile '{current}': run python scripts/configure.py profile {current}")
+
+
+def check_quality_gates() -> None:
+    conf = ROOT / ".claude/quality-gates.conf"
+    if not (ROOT / "scripts/quality-gates.sh").exists():
+        err("scripts/quality-gates.sh", "missing")
+    if not conf.exists():
+        err(".claude/quality-gates.conf", "missing")
+        return
+    keys = {m.group(1) for m in re.finditer(r"^\s*(\w+)\s*=", conf.read_text(encoding="utf-8"), re.M)}
+    for gate in GATES:
+        if gate not in keys:
+            err(conf, f"missing '{gate}=' line (use '{gate}=none' if not applicable)")
+    ci = ROOT / ".github/workflows/checks.yml"
+    if ci.exists():
+        text = ci.read_text(encoding="utf-8")
+        for needle, what in (("scripts/quality-gates.sh", "run the quality gates"), ("gitleaks", "run gitleaks")):
+            if needle not in text:
+                err(ci, f"CI must {what}")
 
 
 def check_workflow_rules() -> None:
@@ -173,6 +245,7 @@ def check_workflow_rules() -> None:
         "**Security override:**": "security override (small security change → Deep)",
         "completed | blocked | needs_escalation": "result contract statuses",
         "Max **2**": "2-cycle cap on review loops",
+        "## Quality gates": "quality gates section",
     }
     for needle, what in required.items():
         if needle not in text:
@@ -196,6 +269,7 @@ def main() -> int:
     skills = check_skills()
     check_references(agents, skills)
     check_settings()
+    check_quality_gates()
     check_workflow_rules()
     if errors:
         print(f"{len(errors)} problem(s):", file=sys.stderr)

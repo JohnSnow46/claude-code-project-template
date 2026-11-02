@@ -1,5 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_TEMPLATE_PROFILE": "solo"
+  },
   "permissions": {
     "allow": [
       "Read",
@@ -10,7 +13,9 @@
       "Bash(git log *)"
     ],
     "ask": [
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)"
     ],
     "deny": [
       "Bash(git add -A)",
@@ -25,10 +30,30 @@
       "Bash(git add :/ *)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
+      "Bash(git push --mirror *)",
+      "Bash(git commit --no-verify *)",
       "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./**/*.pem)",
-      "Read(./**/*.key)"
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(!**/.env.example)",
+      "Read(!**/.env.sample)",
+      "Read(!**/.env.template)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/id_rsa)",
+      "Read(**/id_ed25519)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(!**/.env.example)",
+      "Edit(!**/.env.sample)",
+      "Edit(!**/.env.template)",
+      "Edit(**/*.pem)",
+      "Edit(**/*.key)"
     ]
   },
   "hooks": {
@@ -38,7 +63,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.sh\"",
+            "onFailure": "block"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-files.sh\"",
+            "onFailure": "block"
           }
         ]
       }

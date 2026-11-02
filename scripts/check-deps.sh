@@ -2,7 +2,9 @@
 # Optional dependency vulnerability check. Detects manifests (up to 3 levels deep),
 # runs the stack's own audit tool if it's installed, skips it otherwise.
 # Reports High/Critical where the tool supports a threshold.
-# Exit 0 = clean or nothing to check, 1 = an audit reported vulnerabilities.
+# REQUIRE_DEP_AUDIT=1 (high-security profile) turns a missing audit tool into a failure.
+# Exit 0 = clean or nothing to check, 1 = an audit reported vulnerabilities (or a required
+# audit couldn't run).
 set -u
 cd "${1:-.}" || exit 2
 
@@ -10,9 +12,13 @@ failed=0
 ran=0
 
 has() { command -v "$1" >/dev/null 2>&1; }
+skip() { # dir, tool
+  if [ "${REQUIRE_DEP_AUDIT:-0}" = 1 ]; then echo "FAIL  $1: $2 not installed (REQUIRE_DEP_AUDIT=1)"; failed=1
+  else echo "skip  $1: $2 not installed"; fi
+}
 run() { # dir, tool, command...
   local dir=$1 tool=$2; shift 2
-  if ! has "$tool"; then echo "skip  $dir: $tool not installed"; return; fi
+  if ! has "$tool"; then skip "$dir" "$tool"; return; fi
   echo "audit $dir: $*"
   ran=1
   (cd "$dir" && "$@") || failed=1
@@ -41,7 +47,7 @@ for m in $manifests; do
         run "$dir" yarn yarn npm audit --environment production --severity high
       fi ;;
     requirements.txt)  run "$dir" pip-audit pip-audit -r requirements.txt ;;
-    pyproject.toml)    run "$dir" pip-audit pip-audit ;;
+    pyproject.toml)    run "$dir" pip-audit pip-audit . ;;   # the project, not the active venv
     go.mod)            run "$dir" govulncheck govulncheck ./... ;;
     Cargo.lock)        run "$dir" cargo cargo audit ;;
     Gemfile.lock)      run "$dir" bundle-audit bundle-audit check --update ;;
@@ -53,7 +59,7 @@ for m in $manifests; do
         out=$(cd "$dir" && dotnet list package --vulnerable --include-transitive 2>&1)
         echo "$out"
         if echo "$out" | grep -Eq '(High|Critical)[[:space:]]*$|(High|Critical)[[:space:]]+https?://'; then failed=1; fi
-      else echo "skip  $dir: dotnet not installed"; fi ;;
+      else skip "$dir" dotnet; fi ;;
   esac
 done
 

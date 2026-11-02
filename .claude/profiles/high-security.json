@@ -1,0 +1,36 @@
+{
+  "description": "Sensitive data or regulated code. Team rules plus: every destructive git op denied, dependency audit required, no web access from Claude, bypass mode disabled, Bash sandbox on (macOS/Linux/WSL2).",
+  "settings": {
+    "env": {
+      "CLAUDE_TEMPLATE_PROFILE": "high-security",
+      "REQUIRE_GITLEAKS": "1",
+      "QUALITY_GATES_STRICT": "1",
+      "REQUIRE_DEP_AUDIT": "1",
+      "CLAUDE_GUARD_STRICT": "1"
+    },
+    "permissions": {
+      "disableBypassPermissionsMode": "disable",
+      "ask": [
+        "Edit(/.github/**)",
+        "Edit(/.claude/**)"
+      ],
+      "deny": [
+        "Bash(git push * main)",
+        "Bash(git push * master)",
+        "Bash(git push * HEAD:main)",
+        "Bash(git push * HEAD:master)",
+        "WebFetch",
+        "Bash(curl *)",
+        "Bash(wget *)",
+        "Read(**/*.tfvars)",
+        "Read(**/*.tfstate)",
+        "Read(~/.kube/**)",
+        "Read(~/.config/gcloud/**)",
+        "Read(~/.azure/**)"
+      ]
+    },
+    "sandbox": {
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "description": "One developer. Base settings only: guards block, destructive git ops ask, missing gitleaks/audit tools are skipped.",
+  "settings": {
+    "env": {
+      "CLAUDE_TEMPLATE_PROFILE": "solo"
+    }
+  }
+}

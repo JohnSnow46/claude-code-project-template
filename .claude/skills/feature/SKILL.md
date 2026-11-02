@@ -18,13 +18,20 @@ pick the lowest mode that fits. Output one line first:
 
 ## 2. Run
 
-- **Fast** — implement yourself, run the relevant checks, self-review against the
+- **Fast** — implement yourself, run the quality gates, self-review against the
   security baseline. No subagents.
 - **Normal** — `architect-lite` only if contracts/design are unclear → implement (you, or
   `builder` for large work) → `reviewer-lite`.
 - **Deep** — `architect` (if there's a design decision; else write a 5-line threat note)
   → `builder` → `reviewer`, plus `security-auditor` in parallel if security-sensitive
   (then `reviewer` skips security).
+
+Optional, Normal/Deep only and only on their signal (see `CLAUDE.md`): `test-engineer`
+after implementation for a changed user-facing flow/integration boundary;
+`performance-analyst` before or after implementation for a concrete performance signal.
+
+Before any reviewer runs, run `bash scripts/quality-gates.sh`; a FAIL goes back to the
+implementer first (it doesn't count as a review cycle).
 
 Pass each agent the task plus the previous agent's full output (plan, verified
 contracts, threat note).
@@ -51,6 +58,8 @@ toward the 2-cycle cap). Out-of-scope → report as separate tasks.
 
 - If an ADR shaped the work, add an entry at the top of `## ADR Notes` in
   `docs/decisions.md` (template there).
-- Report to the user in the result-block shape. `blocked` → list `unresolved_issues`
+- Run the quality gates once more on the final state; quote the `RESULT:` line.
+- Report to the user in the result-block shape, `risks` and `unresolved_issues` always
+  filled (write "none" if empty). `blocked` → list `unresolved_issues`
   first; never phrase it as done.
 - Don't commit — the user runs `/commit`.

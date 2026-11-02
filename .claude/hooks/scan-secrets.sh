@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Scan for high-confidence secrets. Stack-agnostic: needs only bash, git, grep, awk.
-#   scan-secrets.sh --staged   added lines in the staged diff (used by guard-bash.sh)
-#   scan-secrets.sh --all      every tracked file (used by CI)
+# Scan for secrets. Two layers:
+#   1. built-in high-confidence patterns + secret file names (needs only bash, git, grep, awk)
+#   2. gitleaks (~150 rules, entropy checks) when it's installed — the real scanner;
+#      the patterns are a floor for machines without it, not a replacement.
+#   scan-secrets.sh --staged   staged changes (guard-bash.sh, git pre-commit hook)
+#   scan-secrets.sh --all      every tracked file (gitleaks also scans full git history)
+# REQUIRE_GITLEAKS=1 makes a missing gitleaks a failure (CI, team/high-security profiles).
 # Exit 0 = clean, 1 = findings, 2 = usage error.
-# Suppress a false positive by adding `secret-scan:allow` to that line.
+# Suppress a false positive with `secret-scan:allow` (built-in) / `gitleaks:allow` on that line.
 set -u
 
 mode="${1:---staged}"
@@ -54,6 +58,22 @@ if [ -n "$hits" ]; then
   echo "Possible secrets (add 'secret-scan:allow' to the line if this is a false positive):" >&2
   # Show location only, never the matched value.
   printf '%s\n' "$hits" | awk -F: '{ print "  " $1 (NF > 2 && $2 ~ /^[0-9]+$/ ? ":" $2 : "") }' | sort -u >&2
+  found=1
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  if [ "$mode" = --staged ]; then
+    gl_out=$(gitleaks git --pre-commit --staged --redact --no-banner 2>&1)
+  else
+    gl_out=$(gitleaks git --redact --no-banner . 2>&1)
+  fi
+  if [ $? -ne 0 ]; then
+    echo "gitleaks reported findings (values redacted):" >&2
+    printf '%s\n' "$gl_out" | grep -Ev '^[[:space:]]*Secret:' >&2
+    found=1
+  fi
+elif [ "${REQUIRE_GITLEAKS:-0}" = 1 ]; then
+  echo "gitleaks is required (REQUIRE_GITLEAKS=1) but not installed: https://github.com/gitleaks/gitleaks#installing" >&2
   found=1
 fi
 

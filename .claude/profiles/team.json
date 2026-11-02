@@ -1,0 +1,22 @@
+{
+  "description": "Shared repo. Adds: gitleaks required, strict quality gates, no direct push to main/master, changes to CI and .claude/ config ask first.",
+  "settings": {
+    "env": {
+      "CLAUDE_TEMPLATE_PROFILE": "team",
+      "REQUIRE_GITLEAKS": "1",
+      "QUALITY_GATES_STRICT": "1"
+    },
+    "permissions": {
+      "ask": [
+        "Edit(/.github/**)",
+        "Edit(/.claude/**)"
+      ],
+      "deny": [
+        "Bash(git push * main)",
+        "Bash(git push * master)",
+        "Bash(git push * HEAD:main)",
+        "Bash(git push * HEAD:master)"
+      ]
+    }
+  }
+}

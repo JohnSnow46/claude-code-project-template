@@ -28,9 +28,14 @@ not — apply the baseline below.
 
 | Mode | Workflow |
 |---|---|
-| **Fast** | You implement → run relevant checks → self-review against the security baseline. No subagents. |
-| **Normal** | Short assessment (`architect-lite` only if contracts/design are unclear) → implement (you, or `builder` if the work is large) → `reviewer-lite`. |
-| **Deep** | `architect` (only for a real design decision; for a security change without one, write a 5-line threat note yourself) → `builder` → `reviewer` ∥ `security-auditor` (if security-sensitive). |
+| **Fast** | You implement (you are the builder) → quality gates → self-review against the security baseline. No subagents. |
+| **Normal** | Short assessment (`architect-lite` only if contracts/design are unclear) → implement (you, or `builder` if the work is large) → quality gates → `reviewer-lite`. |
+| **Deep** | `architect` (only for a real design decision; for a security change without one, write a 5-line threat note yourself) → `builder` → quality gates → `reviewer` ∥ `security-auditor` (if security-sensitive). |
+
+**Optional agents** (Normal/Deep only, and only when the signal exists): `test-engineer`
+when a user-facing flow or integration boundary changes and the project has E2E/integration
+tests; `performance-analyst` when there's a concrete performance signal (slowdown, budget,
+hot path or large-table query changed).
 
 Spawn an agent only when it pays for itself (isolated context for large work, or an
 independent review). Never two agents checking the same concern.
@@ -73,6 +78,14 @@ unresolved_issues: …
 - Never report success with failed/unrun verification or an open Blocking/Critical
   finding — say `blocked` and why.
 
+## Quality gates
+
+Before reporting `completed` in any mode, run `bash scripts/quality-gates.sh` (or the
+gates the change can affect: `… test lint`). Order: test → lint → typecheck → build →
+security; commands live in `.claude/quality-gates.conf`. Any FAIL → fix it or report
+`blocked`. Put the `RESULT:` line and failure counts under `validation`; a gate you didn't
+run is listed as "not run: <reason>", never omitted.
+
 ## Context discipline
 
 - Read only files related to the task; grep before reading; widen scope only when needed.
@@ -108,8 +121,10 @@ Delete this section until you have one.]
 [lint/typecheck]
 [build]
 [run/dev]
+bash scripts/quality-gates.sh   # all gates, from .claude/quality-gates.conf
 ```
 
 ## Environment
 
+Security profile: `env.CLAUDE_TEMPLATE_PROFILE` in `.claude/settings.json` ([docs/security.md](docs/security.md)).
 [Review process, CI, anything about the dev environment Claude can't infer.]

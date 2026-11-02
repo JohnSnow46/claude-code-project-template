@@ -7,31 +7,63 @@ on:
 permissions:
   contents: read
 
+env:
+  GITLEAKS_VERSION: 8.30.1
+  # sha256 of gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz, from the release's checksums.txt
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+
 jobs:
-  # Mandatory, stack-agnostic: needs only bash, git and Python's stdlib.
-  template:
+  # All quality gates (tests, lint, security) via the same script Claude runs locally.
+  # Runs on all three OSes because the hooks must work in macOS bash 3.2 and Git Bash too.
+  gates:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false  # repo scripts run below; keep the token out of .git/config
+      - name: Install gitleaks (pinned, checksum-verified)
+        if: runner.os == 'Linux'
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tgz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          sudo install "$RUNNER_TEMP/gitleaks" /usr/local/bin/gitleaks
+          gitleaks version
+      # Add your toolchain setup here (setup-node, setup-python, setup-dotnet, ...) so the
+      # test/lint/build commands in .claude/quality-gates.conf and the dependency audit can run.
+      - name: Quality gates
+        env:
+          # Linux has gitleaks installed above, so it must run there; other OSes test the
+          # hooks' portability with the built-in scanner.
+          REQUIRE_GITLEAKS: ${{ runner.os == 'Linux' && '1' || '0' }}
+        run: bash scripts/quality-gates.sh
+
+  # Full-history secret scan: catches a secret that was committed and later deleted.
+  gitleaks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Secret scan (tracked files)
-        run: bash .claude/hooks/scan-secrets.sh --all
-      - name: Validate Claude Code config
-        run: python3 scripts/validate_template.py
-      - name: Test validator
-        run: python3 -m unittest discover -s scripts/tests -p "test_*.py"
-      - name: Test hooks
-        run: bash scripts/tests/test_hooks.sh
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false  # keep the token out of .git/config
+          fetch-depth: 0
+      - name: Install gitleaks (pinned, checksum-verified)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tgz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          sudo install "$RUNNER_TEMP/gitleaks" /usr/local/bin/gitleaks
+      - name: Scan full git history
+        run: gitleaks git --redact --no-banner --verbose .
 
-  # Optional, project-specific: runs your stack's audit tool if a manifest exists.
-  # Add a setup step for your toolchain (setup-node, setup-python, ...) so the tool
-  # is installed; without it the script skips and passes.
-  dependencies:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Dependency audit
-        run: bash scripts/check-deps.sh
-
-  # Add your project's own jobs below (build, test, lint) using CLAUDE.md's Commands.
+  # Add your project's own jobs below if they don't fit in quality-gates.conf.

@@ -33,6 +33,7 @@ Skipping any step is not verifying — it's asserting.
 | Build succeeds | This turn's build output: exit 0 | Linter passing, "looks right" |
 | Bug fixed | Reproducing the original symptom, then confirming it's gone | Code changed, assumed fixed |
 | Ready for review/merge | The build/test command run in this session (see `builder`/`reviewer` agents) | Reading the diff and it "looking fine" |
+| Task complete | `bash scripts/quality-gates.sh` this turn: `RESULT: PASS`, skipped gates named | Running only the one test you wrote |
 
 ## Red flags — stop and go run the command
 

@@ -1,0 +1,13 @@
+{
+  "profile": "solo",
+  "changes": [
+    {
+      "path": [
+        "env",
+        "CLAUDE_TEMPLATE_PROFILE"
+      ],
+      "had": false,
+      "old": null
+    }
+  ]
+}
