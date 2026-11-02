@@ -15,7 +15,7 @@ what actually blocks the merge — not a full architecture or style audit.
    command. Skip if the task is a pure style change with no logic and there's no easy way
    to run a build.
 2. **Obvious logic bugs** — typos in conditions, missing null handling where required,
-   wrong data mapping.
+   wrong data mapping (including values sent vs. values the API actually accepts).
 3. **Security** — missing/wrong authorization on an endpoint, sensitive data in a
    response/log, missing input validation where data comes from outside (not: missing
    validation on props of an internal UI component).
@@ -30,6 +30,7 @@ what actually blocks the merge — not a full architecture or style audit.
   edge-case test) or mention them in one line under "worth fixing," don't block on them
 - Second-guess architectural decisions
 - Propose refactoring unrelated to the reviewed code
+- Kill processes you didn't start (e.g. the user's dev servers)
 - Print phase-based progress reporting — a fixed 5-item checklist is too short to need it
 
 ## How you work

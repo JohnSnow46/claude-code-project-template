@@ -33,8 +33,11 @@ mid-implementation.
 
 `architect`/`reviewer` (full) — deep mode ONLY. `architect-lite` doesn't write ADRs or
 touch `docs/decisions.md`/area docs — it gives a short plan (goal, files touched,
-solution, risks, validation). `reviewer-lite` checks only what blocks merging
-(build/test, security, obvious bugs) — it skips the full architecture/style audit.
+solution with verified contracts, risks, validation). `reviewer-lite` checks only what
+blocks merging (build/test, security, obvious bugs) — it skips the full
+architecture/style audit. `security-auditor` (read-only) runs after a stage touching
+security/sensitive data, before every production deploy, or in deep mode when a change
+directly touches security.
 
 Number of areas touched is a **supporting** signal, not sufficient on its own: a simple
 CRUD endpoint naturally touches more than one area, and still stays fast mode unless it
@@ -62,11 +65,19 @@ correctness, 2) working feature, 3) consistency" for something production-critic
 Don't design for scale/flexibility the project doesn't need without an explicit ask.]
 
 **Stage-end audit:** if the project tracks work in stages/milestones (a roadmap, a
-"Current status" section, etc.), run one full `reviewer` pass (no `architect` needed)
-over everything built in a stage before starting the next one — even if every task in
-it individually went through fast/normal mode. `reviewer-lite`'s per-task diff scope
-doesn't reliably catch issues that only show up in aggregate across a stage, e.g.
-ownership checks or cascade/FK config touched piecemeal across several endpoints.
+"Current status" section, etc.), once every task in a stage is done and before starting
+the next, run (in parallel, read-only, no `architect`):
+- a full `reviewer` pass over everything built in the stage — **only if the stage had
+  2+ tasks**. `reviewer-lite`'s per-task diff scope doesn't reliably catch issues that
+  only show up in aggregate, e.g. ownership checks or cascade/FK config touched piecemeal
+  across several endpoints. A single-task stage has no aggregate — `reviewer-lite` is
+  enough.
+- `security-auditor` — **only if the stage touches auth/roles/encryption/sensitive data**
+  (directly or indirectly, e.g. an account-management panel). Purely visual stages skip
+  it.
+
+Regardless of the above, `security-auditor` is **mandatory once before every production
+deploy**, over everything changed since the previous deploy.
 
 ## Using the docs
 

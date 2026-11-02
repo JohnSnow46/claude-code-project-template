@@ -1,6 +1,6 @@
 ---
 name: feature
-description: Run a full feature/task through this repo's mode pipeline — classify fast/normal/deep, delegate to the matching agent chain, and log ADR usage. Use for `/feature <task description>` instead of manually picking agents and remembering to update docs/decisions.md.
+description: Run a full feature/task through this repo's mode pipeline — classify fast/normal/deep, delegate to the matching agent chain, run the stage-end audit when a stage closes, and log ADR usage. Use for `/feature <task description>` instead of manually picking agents and remembering to update docs/decisions.md.
 argument-hint: [task description]
 disable-model-invocation: true
 ---
@@ -11,7 +11,9 @@ matching agent chain → log ADR usage. Makes the process in `CLAUDE.md` ("Work 
 
 ## 1. Classify
 
-Read the tiering table in `CLAUDE.md` under "Work modes". Score `$ARGUMENTS` against its
+If `$ARGUMENTS` names a stage from a plan doc (`docs/*-plan.md`), read that stage's
+section first — the plan may already prescribe the mode. Otherwise, read the tiering
+table in `CLAUDE.md` under "Work modes". Score `$ARGUMENTS` against its
 signals (areas touched, new business/domain rule, schema/migration change,
 security/auth/payments touched). Pick the lowest mode that fits — don't escalate on area
 count alone.
@@ -27,11 +29,17 @@ the next:
 
 - **Fast**: `builder` → `reviewer-lite`
 - **Normal**: `architect-lite` → `builder` → `reviewer-lite`
-- **Deep**: `architect` → `builder` → `reviewer`
+- **Deep**: `architect` → `builder` → `reviewer` (+ `security-auditor` in parallel with
+  `reviewer` if the change directly touches auth/roles/encryption/sensitive data)
 
-Pass each agent the task description plus the previous agent's output (plan/ADR,
-implementation summary). Don't skip an agent in the chosen chain and don't add one that
-isn't listed for it.
+Pass each agent the task description plus the previous agent's **full** output (plan/ADR
+including verified contracts and pitfalls, implementation summary). Tell `builder`
+explicitly whether to commit, the commit message format, and which files in the working
+tree NOT to stage. Don't skip an agent in the chosen chain and don't add one that isn't
+listed for it.
+
+A "changes requested" verdict → `builder` with the list of fixes → the same reviewer
+again.
 
 If mid-chain an agent flags the task as bigger than the chosen mode (e.g.
 `architect-lite` recommends `architect`, or `builder`/`reviewer` finds the design
@@ -42,7 +50,17 @@ everything the original chain already produced (plan/ADR, implementation summary
 input. Don't restart the new mode's chain from its first agent if some of that work
 already happened under the old mode.
 
-## 3. Log ADR usage (normal/deep only)
+## 3. Stage-end audit (only if this task closes a stage)
+
+Per the "Stage-end audit" rule in `CLAUDE.md`, in parallel, read-only:
+- full `reviewer` — only if the stage had 2+ tasks,
+- `security-auditor` — only if the stage touches auth/roles/encryption/sensitive data.
+
+In-scope findings → one batch of fixes for `builder`. Out-of-scope findings (e.g. in a
+module the stage wasn't supposed to touch) → report to the user as a separate task to
+decide on; don't fix them unilaterally.
+
+## 4. Log ADR usage (normal/deep only)
 
 Skip this step entirely in fast mode.
 

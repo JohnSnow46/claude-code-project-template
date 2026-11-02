@@ -51,7 +51,11 @@ concrete signal demands it.** `CLAUDE.md` has the full classification table; the
 |---|---|
 | **Fast** (default) | `builder` → `reviewer-lite` |
 | **Normal** | `architect-lite` → `builder` → `reviewer-lite` |
-| **Deep** | `architect` → `builder` → `reviewer` |
+| **Deep** | `architect` → `builder` → `reviewer` (+ `security-auditor` if security is touched directly) |
+
+When a stage closes: full `reviewer` (only for 2+ task stages) ∥ `security-auditor`
+(only for stages touching auth/sensitive data) → one batch of fixes for `builder`.
+`security-auditor` also runs once before every production deploy.
 
 The signals that decide which mode a task falls into (areas touched, new business rule,
 schema change, security touch) live in `CLAUDE.md`'s "Work modes" table — that's the
@@ -74,7 +78,8 @@ would still leave every remaining hop priced as if it might be the hard case.
 | `architect` | Full design + ADR-writing — deep mode only | Opus — the task reached deep mode by definition, so the decision it's designing is worth the strongest model |
 | `architect-lite` | A fixed 5-point plan, no ADR — normal mode | Sonnet — real design judgment, but scoped and short |
 | `builder` | Implements code and tests, in every mode | Sonnet — day-to-day implementation work |
-| `reviewer` | Full review (architecture, tests, security) — deep mode only | Opus — same reasoning as `architect`: deep-mode stakes justify the strongest reviewer |
+| `reviewer` | Full review (architecture, tests, security, contracts, target environment) — deep mode + stage-end audit of 2+ task stages | Opus — same reasoning as `architect`: deep-mode stakes justify the strongest reviewer |
+| `security-auditor` | Read-only security audit — after stages touching auth/sensitive data, before every deploy, deep mode with direct security changes | Opus — rare, and a missed access-control or session flaw is the costliest kind of bug |
 | `reviewer-lite` | Fast review (blocking issues + security only) — fast/normal mode | Sonnet — a bounded checklist (build/test, obvious bugs, security basics), not an architecture audit |
 | `prompt-engineer` | Meta-agent: writes/edits other agents and skills consistently | Sonnet — prompt-quality judgment |
 | `debugger` | Root-causes errors and failing tests — orthogonal to the tiers, use any time something's broken | Sonnet — root-causing needs real reasoning regardless of which mode triggered it |
@@ -83,9 +88,10 @@ Each agent's frontmatter (`name`, `description`, `tools`, `model`) and behavior 
 checked against Anthropic's current [sub-agents docs](https://code.claude.com/docs/en/sub-agents)
 during this template's design.
 
-The `architect` and `reviewer` model assignments above assume your Claude Code plan
-grants access to Opus. If it doesn't, change their `model:` field in
-`.claude/agents/architect.md` and `.claude/agents/reviewer.md` to `sonnet` — deep mode
+The `architect`, `reviewer` and `security-auditor` model assignments above assume your
+Claude Code plan grants access to Opus. If it doesn't, change their `model:` field in
+`.claude/agents/architect.md`, `.claude/agents/reviewer.md` and
+`.claude/agents/security-auditor.md` to `sonnet` — deep mode
 still gets the most capable model your plan allows, it just won't be a tier above
 `architect-lite`/`builder`.
 
