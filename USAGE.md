@@ -1,197 +1,122 @@
 # Usage guide
 
-Step-by-step walkthrough for adopting this template in a real project. `README.md` is the
-reference (tables, attribution); this file is the narrative "do this, then this."
+Step by step. [README.md](README.md) is the overview.
 
-## 1. Copy it into your project
+## 1. Copy it in
 
 ```bash
-cp -r CLAUDE.md docs .claude /path/to/your-project/
-cd /path/to/your-project
+cp -r CLAUDE.md docs .claude scripts .github /path/to/your-project/
 ```
 
-If your project already has a `CLAUDE.md`, merge by hand instead of overwriting — keep
-whatever it already had right, add what this template adds.
+Merge by hand anything your project already has (`CLAUDE.md`, `.github/workflows/`).
+Add the secret entries from this repo's `.gitignore` to yours.
 
 ## 2. Fill in `CLAUDE.md`
 
-Work through it top to bottom; each section is a placeholder to replace, not boilerplate
-to leave in:
+Replace every `[placeholder]`:
 
-1. **Title/one-liner** — what the project does, stack, how it's structured.
-2. **Docs table** — one row per area doc you'll actually create (see step 5). Leave it
-   empty if you're not using the ADR/docs system at all (see step 6, "trimming").
-3. **Tiering table signals** — the columns (areas touched, new business rule, schema
-   change, security touch) are already generic; you usually don't need to edit the table
-   itself. Do fill in the **priority order** line right below the mandatory rules — this
-   is the one line that most changes agent behavior day to day (e.g. "working feature >
-   fast iteration > consistency" for a prototype, vs. "correctness > working feature >
-   consistency" for something regulated).
-4. **Critical constraints** — leave empty until you actually have one. Don't invent
-   constraints speculatively; add a line here the first time a real invariant gets
-   violated or almost does.
-5. **Global conventions, Commands, Environment** — the mechanical stuff: naming, how to
-   build/test/run, what review process you use. Claude can't guess these from the repo
-   reliably, so they're worth getting right early.
-6. **Response language** (optional) — if you want every agent responding in a specific
-   language, add one line to CLAUDE.md's Global conventions (e.g. "Respond in Polish").
-   Every agent loads CLAUDE.md, so one line there covers all of them — don't repeat it in
-   individual `.claude/agents/*.md` files.
+1. **Title/one-liner** — what it does, the stack.
+2. **Docs table** — one row per area doc you actually create (step 6). Empty is fine.
+3. **Priority order** — the line that most changes day-to-day behavior (e.g.
+   "correctness/security > working feature > consistency").
+4. **Critical constraints** — leave empty until a real invariant exists.
+5. **Global conventions, Commands, Environment** — naming, how to build/test/run
+   (including a single test), review process. Claude can't guess these reliably.
+6. **Response language** (optional) — one line in Global conventions (e.g. "Respond in
+   Polish") covers every agent.
 
-Run `/context` after your first session to confirm `CLAUDE.md` actually loaded.
+Leave the Work modes table, the security override and the Security baseline alone unless
+you have a reason; tune them later (step 4). Keep the file short — it loads into every
+conversation; the validator fails above 130 lines.
 
-## 2b. Fill in `.claude/settings.json`
+## 3. Fill in `.claude/settings.json`
 
-`CLAUDE.md` isn't the only file worth configuring per-project — `.claude/settings.json`
-has a `permissions` object with two lists.
-
-**`permissions.allow`** is the set of tool calls Claude can run without asking you for
-approval first. `Read`, `Grep`, `Glob`, and read-only `git status`/`git diff`/`git log`
-are pre-approved out of the box; everything else still prompts until you add a rule for
-it. It ships with no install/test/lint/build entries, since those commands are project-
-specific — add your own, using the same `Bash(<command> *)` wildcard form as the rules
-already in the file:
+**`permissions.allow`** — pre-approved commands. Ships with `Read`/`Grep`/`Glob` and
+read-only git. Add your build/test/lint commands in the same form, matching `CLAUDE.md`'s
+Commands:
 
 ```json
-"Bash(npm install *)",
 "Bash(npm test *)",
 "Bash(npm run lint *)",
 "Bash(npm run build *)"
 ```
 
-Match these to whatever you filled into `CLAUDE.md`'s Commands section (step 2 above) —
-same commands, just expressed as permission rules instead of a shell block. Don't put
-`[bracketed placeholders]` inside a permission specifier the way `CLAUDE.md` does —
-brackets and asterisks inside `Bash(...)` may be read literally rather than as
-guidance text, so an unfilled placeholder there silently matches nothing instead of
-prompting you to fill it in.
+Don't put `[placeholders]` inside `Bash(...)` — they'd match literally.
 
-**`permissions.deny`** is checked before `allow` and wins on conflict — it's the place
-for rules you want to hold even if something else grants broader access. It ships with
-one guard already filled in: variants of "add everything" (`git add -A`, `--all`, `-u`,
-`.`, `:/`, bare or with trailing arguments) are blocked repo-wide, backing up the
-`/commit` skill's "never bulk-add" rule so it holds even outside a `/commit` turn.
+**`permissions.ask`** — `git push` always asks.
 
-### Format/lint-on-save hook (optional)
+**`permissions.deny`** — wins over `allow`. Ships with bulk `git add`, force push, and
+`Read` of `.env`, `.env.*`, `*.pem`, `*.key`. Note `.env.*` also hides `.env.example`
+from `Read`; if Claude needs it, narrow the rule (e.g. to `.env.local`,
+`.env.production`).
 
-`settings.json` ships with no `hooks` key — a placeholder hook that fires on every
-`Edit`/`Write` would otherwise print noise on every file write until you filled it in.
-If you want your formatter/linter to run automatically after Claude edits a file, add a
-`hooks` key at the top level of `settings.json` (a sibling of `permissions`), with your
-stack's actual command in place of the example below:
+**`hooks`** — `guard-bash.sh` runs before every Bash call. It does nothing unless the
+command involves git; then it blocks bulk staging, `commit -a`, `--no-verify` and force
+push anywhere in the command, and runs the secret scan on `git commit`. Needs `bash` (Git
+Bash on Windows, which Claude Code already uses).
+
+Optional format-on-save hook — add next to the existing one, with your formatter:
 
 ```json
-"hooks": {
-  "PostToolUse": [
-    {
-      "matcher": "Edit|Write",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "npx prettier --write ."
-        }
-      ]
-    }
-  ]
-}
+"PostToolUse": [
+  { "matcher": "Edit|Write",
+    "hooks": [{ "type": "command", "command": "npx prettier --write ." }] }
+]
 ```
 
-Swap `npx prettier --write .` for your stack's format/lint-on-save command (e.g. `ruff
-format .`, `gofmt -w .`).
+## 4. Work normally
 
-## 3. Try the pipeline on a real task
+Just ask. The main thread picks a mode from `CLAUDE.md`:
 
-Two ways to trigger the pipeline:
+- **"Make the login button spinner match the brand color"** → Fast. Claude edits the
+  file, runs the relevant check, self-reviews, done. If you see subagents here, the mode
+  table is too loose for your project — tighten it.
+- **"Add CSV export to the orders page"** → Normal. Maybe `architect-lite` if the orders
+  API is unfamiliar, then implementation, then `reviewer-lite`.
+- **"Add 2FA to login"** → Deep (touches authentication). Threat analysis, `builder`,
+  `reviewer` + `security-auditor`. If it shows up as Fast or Normal, the security
+  override isn't being applied — check `CLAUDE.md`.
 
-- **`/feature <task description>`** — deterministic. Classifies the task against the
-  tiering table, prints the chosen mode and why in one line, runs the matching agent
-  chain, and — for normal/deep mode — appends the `## ADR Notes` entry to
-  `docs/decisions.md` itself once the chain finishes. Use this when you want the
-  classification and ADR logging to happen reliably instead of depending on the main
-  thread remembering to do it.
-- **Just ask normally** — the main thread classifies from the same table on its own for
-  any request, without `/feature`. This still works and is fine for quick, obvious tasks;
-  `/feature` exists for when you want the mode decision and ADR logging made explicit and
-  guaranteed.
+Want each step visible? Use `/feature <task>`. When a task ends `blocked` you get the
+open findings — decide, then ask again. Commit with `/commit` when you're happy.
 
-Don't read the agent files first — just work normally and watch what happens.
+Before a production deploy, ask for a `security-auditor` pass over everything since the
+last deploy.
 
-**A small task** ("add a loading spinner to the login button"):
-- Expect: the main thread picks fast mode on its own, `builder` implements it,
-  `reviewer-lite` gives a quick pass/fail, then invoke `/commit` yourself once it's green.
-- If you see `architect` get spawned for something this small, that's a sign the tiering
-  table's signals need tightening for your project — edit the table in `CLAUDE.md`.
+## 5. Skills
 
-**A medium task** ("add a password-reset flow"):
-- Expect: `architect-lite` gives a 5-point plan (goal/files/solution/risks/validation)
-  before `builder` starts. If it instead jumps straight to `builder`, the task probably
-  didn't trip enough signals — check whether that's actually fine (many "new module"
-  tasks are simpler than they sound) or whether the table needs a signal added.
+- `/feature` and `/commit` run only when you type them.
+- `writing-skills` and `verification-before-completion` load automatically when relevant.
+- `writing-tests` and `project-conventions` are placeholders. Fill them in, then delete
+  the `disable-model-invocation: true` line so Claude loads them on its own.
 
-**A large task** ("migrate the session store to a different backend"):
-- Expect: `architect` writes an ADR to `docs/adr/ADR-NNNN.md` before any code changes,
-  `builder` implements against that ADR, `reviewer` does the full audit. After the whole
-  chain finishes, check `docs/decisions.md` — the main thread should have appended an
-  entry to `## ADR Notes`.
+## 6. Docs and ADRs
 
-If a mode never seems to trigger correctly, that's the fastest signal something in the
-tiering table doesn't match how your project's tasks actually break down — treat the
-table as something to tune, not something to leave as-is forever.
+When you make a real architectural decision:
 
-## 4. Working with skills
+1. Delete `docs/adr/ADR-0001-example.md` and its line in `docs/decisions.md`.
+2. Let `architect` (Deep mode) write the ADR, or write it yourself in the same format.
+3. When an area doc grows past ~150 lines, give it a `## Index` (see `docs/README.md`).
 
-- `commit` and `feature` are user-invoked — type `/commit` or `/feature <task>` yourself.
-  Claude won't run either on its own.
-- `writing-skills` and `verification-before-completion` are model-invoked — Claude loads
-  them automatically when relevant. You can also invoke either directly (e.g.
-  `/writing-skills`) to force a read.
-- `writing-tests` and `project-conventions` ship as `[fill in]` placeholders, so they're
-  set `disable-model-invocation: true` for now — Claude won't auto-load a skill that's
-  just brackets. Once you've filled in their content, remove the
-  `disable-model-invocation: true` line from each so Claude starts loading them
-  automatically again.
-- If a model-invoked skill never seems to fire when it should, its `description` is
-  probably too generic — see the `writing-skills` skill for how to fix that.
+## 7. Checks and CI
 
-## 5. Growing the docs system
+`.github/workflows/checks.yml` runs on every push:
 
-Once you have a real architectural decision to record:
+- **Mandatory** (any stack): secret scan, config validation, tests for the validator and
+  hook. Needs only bash, git, Python 3 — nothing to install.
+- **Optional**: `scripts/check-deps.sh` finds manifests (npm/pnpm/yarn, pip, Go, Cargo,
+  Bundler, Composer, .NET) and runs the audit tool if installed. Add your toolchain's
+  setup step to that job, or delete the job.
+- **Yours**: add build/test/lint jobs for your project.
 
-1. Delete `docs/adr/ADR-0001-example.md` and its line in `docs/decisions.md`'s
-   `## Index`.
-2. Let `architect` (deep mode) write the first real one — don't hand-write ADRs yourself
-   unless you're intentionally bypassing the pipeline.
-3. As area docs (domain model, API layer, whatever fits your project) grow past roughly
-   150 lines, add a `## Index` section near the top per the pattern in `docs/README.md`
-   — this is what keeps them cheap to consult later.
+Run the same locally — see the Checks section in the README.
 
-## 6. Adding your own agents/skills
+## 8. Adding or trimming agents and skills
 
-Delegate to `prompt-engineer`: *"Use the prompt-engineer agent to create a subagent that
-[does X]."* It reads the existing agents/skills for style, applies the rules in
-`writing-skills`, and hands you the finished file to review before it's saved — it won't
-write the file unless you ask it to.
-
-## 7. Trimming what you don't need
-
-Nothing here is load-bearing for everything else. Common trims — each one also touches
-`.claude/skills/feature/SKILL.md`'s chain list (step 2), which names every agent by mode.
-Trimming an agent without updating that list leaves `/feature` delegating to something
-that no longer exists:
-
-- **No deep work expected** (small personal project) → delete `architect`, `reviewer`;
-  keep `builder` → `reviewer-lite` as the only path, delete the tiering table from
-  `CLAUDE.md` and replace with a one-line note that it's always the same chain. In
-  `feature/SKILL.md`, delete the Normal and Deep rows from the chain list, or delete the
-  skill entirely — with only one path, there's nothing left to classify, so `/feature`
-  isn't buying you anything over just asking normally.
-- **Don't want an ADR system** → delete `docs/` entirely and the "Using the docs" section
-  of `CLAUDE.md`. `architect` then just designs and hands steps to `builder`, no
-  file-writing. In `feature/SKILL.md`, delete step 3 ("Log ADR usage") — it appends to
-  `docs/decisions.md`, which no longer exists.
-- **Single-person project, no code review culture** → delete `reviewer`/`reviewer-lite`,
-  have `builder` report directly to you instead. In `feature/SKILL.md`'s chain list, drop
-  the reviewer/reviewer-lite step from every mode's chain.
-
-Cut freely — a template you've pruned to fit is more useful than one you're afraid to
-touch.
+- **Add** — read `writing-skills`, end agents with the result block from `CLAUDE.md`,
+  then run `python scripts/validate_template.py`.
+- **Trim** — delete the file, then run the validator: it lists every remaining reference
+  (in `CLAUDE.md`, `feature/SKILL.md`, README) to fix.
+- Common trims: no deep work → drop `architect` and `reviewer`; no ADRs → drop `docs/`
+  and the ADR lines in `CLAUDE.md`; solo project with no review habit → keep
+  `reviewer-lite` anyway for Normal work, it's the cheapest independent check you have.

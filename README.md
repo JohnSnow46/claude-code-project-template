@@ -1,187 +1,166 @@
 # Claude Code project template
 
-A reusable starter for new projects: a cost-tiered agent pipeline, an ADR-backed decision
-log, and a handful of skills — copy it in, fill in the placeholders, delete what doesn't
-apply.
+A lightweight Claude Code setup for small and medium projects — web apps, APIs, SaaS,
+internal tools, CLIs, prototypes headed for production. Any language, any framework.
 
-This isn't a from-scratch design. It's a synthesis of five sources, credited in detail
-under [Attribution](#attribution):
+Three ideas:
 
-- **A real project** (a portfolio e-commerce app) — the tiered pipeline and ADR system,
-  generalized away from its original stack
-- **[mattpocock/skills](https://github.com/mattpocock/skills)** (MIT) — the
-  model-invoked-vs-user-invoked framing for skills
-- **[obra/superpowers](https://github.com/obra/superpowers)** — two condensed skills,
-  `writing-skills` and `verification-before-completion`
-- **[EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin)**
-  — confirmed frontmatter conventions against its canonical fixture
-- **[zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill)** —
-  reviewed, nothing adopted directly (see Attribution for why)
-- Anthropic's official Claude Code docs (skills, sub-agents, best practices) — every
-  frontmatter field below is checked against current docs, not assumed from these repos
+- **Speed first.** Most tasks are small, so the default path is the main Claude thread
+  doing the work directly — no subagents, no plans, no reports.
+- **Security by default.** A short security baseline applies to every change, a hook
+  blocks dangerous git operations and secret commits, and security-sensitive work is
+  always escalated — however small the diff.
+- **Right-sized.** Bigger or riskier changes get more scrutiny; small ones stay small.
 
-## How to use this
+## Install
 
-See **[USAGE.md](USAGE.md)** for the full step-by-step walkthrough. Short version:
-
-1. Copy `CLAUDE.md`, `docs/`, `.claude/agents/`, `.claude/skills/`, and
-   `.claude/settings.json` into your project root.
-2. Fill in the `[bracketed placeholders]` in `CLAUDE.md` — project description, docs
-   table, priority order, critical constraints, conventions, commands, environment.
-   `.claude/settings.json` has its own placeholders (permission entries for your
-   install/test/lint/build commands) — see [USAGE.md](USAGE.md) step 2b.
-3. Delete what doesn't apply. If you never do large/risky work, drop `architect` and
-   `reviewer` entirely and just use `builder` → `reviewer-lite` for everything. If you
-   don't want an ADR system, delete `docs/` and the "Using the docs" section of
-   `CLAUDE.md`. Nothing here depends on all of it being present.
-4. Commit `.claude/` (including `settings.json`), `CLAUDE.md`, and `docs/` to git so
-   your team benefits too.
-
-Starting a .NET project? The `dotnet` branch has `CLAUDE.md`'s Commands/Global
-conventions/Environment sections pre-filled and a note on the
-[dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) plugin.
-
-## The pipeline: cost-tiered by default
-
-The core idea, kept from the source project: **most tasks should cost as little as
-possible — cheap model, cheap agent chain, no unnecessary hops — and only escalate when a
-concrete signal demands it.** `CLAUDE.md` has the full classification table; the shape is:
-
-| Mode | Chain |
-|---|---|
-| **Fast** (default) | `builder` → `reviewer-lite` |
-| **Normal** | `architect-lite` → `builder` → `reviewer-lite` |
-| **Deep** | `architect` → `builder` → `reviewer` (+ `security-auditor` if security is touched directly) |
-
-When a stage closes: full `reviewer` (only for 2+ task stages) ∥ `security-auditor`
-(only for stages touching auth/sensitive data) → one batch of fixes for `builder`.
-`security-auditor` also runs once before every production deploy.
-
-The signals that decide which mode a task falls into (areas touched, new business rule,
-schema change, security touch) live in `CLAUDE.md`'s "Work modes" table — that's the
-single source of truth, so this one only maps mode → chain. The main thread classifies
-from that table itself, every time — no dedicated classifier agent, to avoid burning a
-round-trip just to classify an obvious task.
-
-Cost-tiering here means two separate things, and both matter: fewer hops for small tasks
-(fast mode skips `architect`/`reviewer` entirely), *and* each hop that does run uses the
-cheapest model that's actually sufficient for it — see the Model column below. A fast-mode
-task not only skips two agents, its two remaining agents (`builder` and `reviewer-lite`,
-both on Sonnet) are also individually cheaper than the agents a deep-mode task
-runs (`architect` and `reviewer` on Opus). The two effects compound: skipping hops alone
-would still leave every remaining hop priced as if it might be the hard case.
-
-## `.claude/agents/` — subagents
-
-| Agent | Role | Model |
-|---|---|---|
-| `architect` | Full design + ADR-writing — deep mode only | Opus — the task reached deep mode by definition, so the decision it's designing is worth the strongest model |
-| `architect-lite` | A fixed 5-point plan, no ADR — normal mode | Sonnet — real design judgment, but scoped and short |
-| `builder` | Implements code and tests, in every mode | Sonnet — day-to-day implementation work |
-| `reviewer` | Full review (architecture, tests, security, contracts, target environment) — deep mode + stage-end audit of 2+ task stages | Opus — same reasoning as `architect`: deep-mode stakes justify the strongest reviewer |
-| `security-auditor` | Read-only security audit — after stages touching auth/sensitive data, before every deploy, deep mode with direct security changes | Opus — rare, and a missed access-control or session flaw is the costliest kind of bug |
-| `reviewer-lite` | Fast review (blocking issues + security only) — fast/normal mode | Sonnet — a bounded checklist (build/test, obvious bugs, security basics), not an architecture audit |
-| `prompt-engineer` | Meta-agent: writes/edits other agents and skills consistently | Sonnet — prompt-quality judgment |
-| `debugger` | Root-causes errors and failing tests — orthogonal to the tiers, use any time something's broken | Sonnet — root-causing needs real reasoning regardless of which mode triggered it |
-
-Each agent's frontmatter (`name`, `description`, `tools`, `model`) and behavior were
-checked against Anthropic's current [sub-agents docs](https://code.claude.com/docs/en/sub-agents)
-during this template's design.
-
-The `architect`, `reviewer` and `security-auditor` model assignments above assume your
-Claude Code plan grants access to Opus. If it doesn't, change their `model:` field in
-`.claude/agents/architect.md`, `.claude/agents/reviewer.md` and
-`.claude/agents/security-auditor.md` to `sonnet` — deep mode
-still gets the most capable model your plan allows, it just won't be a tier above
-`architect-lite`/`builder`.
-
-## `.claude/skills/` — skills
-
-| Skill | Invocation | Use for |
-|---|---|---|
-| `feature` | User-invoked (`disable-model-invocation: true`) | `/feature <task>` — deterministic classify → agent chain → ADR-log pipeline |
-| `commit` | User-invoked (`disable-model-invocation: true`) | Staging/committing once `reviewer`/`reviewer-lite` gives a ready-to-merge verdict |
-| `writing-tests` | User-invoked for now (`disable-model-invocation: true`) — flip to model-invoked once filled in | Background conventions for writing/fixing tests |
-| `project-conventions` | User-invoked for now (`disable-model-invocation: true`) — flip to model-invoked once filled in | Detailed conventions too long for `CLAUDE.md` |
-| `writing-skills` | Model-invoked | Reference for authoring this repo's own skills/agents well |
-| `verification-before-completion` | Model-invoked | Evidence-before-claims discipline for `builder`/`reviewer`/`reviewer-lite` |
-
-### Model-invoked vs. user-invoked — a design axis, not a default
-
-Every skill you add should be deliberately classified along this axis (named explicitly
-here, credited to mattpocock/skills' `invocation.md`):
-
-- **User-invoked** (`disable-model-invocation: true`) — reachable only by you typing
-  `/name`. Use for anything with a side effect or timing you want to control (`commit` is
-  the example here — you don't want the model deciding to commit because the code "looks
-  ready").
-- **Model-invoked** (the default — omit the field) — reachable by you or by Claude
-  automatically when relevant. Use for background knowledge or reference material the
-  model should reach for on its own (`writing-tests`, `project-conventions`,
-  `writing-skills`, `verification-before-completion`).
-
-The test isn't "could this be reused" — it's "could the model usefully reach for this on
-its own, or does invoking it need to stay a deliberate human action?"
-
-## The ADR system
-
-`docs/decisions.md` is an **index + per-task usage log**; full ADR content lives
-one-per-file in `docs/adr/ADR-NNNN.md`. `docs/README.md` explains the full pattern,
-including the "never read a doc over ~150 lines without an offset" rule that keeps this
-from costing context as the project grows. `docs/adr/ADR-0001-example.md` shows the
-Context → Decision → Consequences format — delete it once you've written a real one.
-
-## Conventions for adding your own
-
-**Subagent** — `.claude/agents/<name>.md`:
-
-```markdown
----
-name: my-agent
-description: When Claude should delegate to this agent — third person, specific triggers
-tools: Read, Grep, Glob        # omit to inherit everything
-model: sonnet                  # sonnet | opus | haiku | inherit
----
-
-System prompt / instructions for the agent go here.
+```bash
+cp -r CLAUDE.md docs .claude scripts .github /path/to/your-project/
 ```
 
-**Skill** — `.claude/skills/<name>/SKILL.md`:
+Then fill in the `[placeholders]` in `CLAUDE.md` (project, commands, conventions) and add
+your build/test commands to `permissions.allow` in `.claude/settings.json`.
+[USAGE.md](USAGE.md) walks through it step by step. Already have a `CLAUDE.md` or a CI
+workflow? Merge by hand.
 
-```markdown
----
-name: my-skill
-description: Use when [specific triggering conditions] — not what the skill does
----
+Starting a .NET project? The `dotnet` branch has `CLAUDE.md` pre-filled for .NET (it may
+lag behind `master`).
 
-Skill content. Keep it under ~500 words if it loads often; put heavy reference
-material in a separate file next to SKILL.md instead.
+## How it works
+
+```mermaid
+flowchart LR
+    T[Task] --> C{Classify}
+    C -->|small, low risk| F[Fast<br/>main thread implements<br/>checks + self-review]
+    C -->|feature, 2-3 modules,<br/>DB change| N[Normal<br/>architect-lite if unclear<br/>implement<br/>reviewer-lite]
+    C -->|architecture, complex migration,<br/>OR touches auth/payments/<br/>crypto/secrets/PII| D[Deep<br/>architect if a design decision<br/>builder<br/>reviewer + security-auditor]
+    F --> R[Result]
+    N --> R
+    D --> R
+    B[Security baseline] -.applies to.-> F & N & D
 ```
 
-Before writing either, read the `writing-skills` skill — it has the rules that matter
-most for descriptions and for matching the guidance's *form* to the failure it prevents.
-Or just delegate to `prompt-engineer`, which applies those rules for you.
+The main thread picks the mode itself from the table in `CLAUDE.md` — no classifier
+agent, no question to you. When unsure it picks the lower mode and escalates if a real
+signal appears.
 
-## Options not built into this starter
+| Mode | When | What runs |
+|---|---|---|
+| **Fast** (default) | UI, styling, small fixes, simple CRUD, docs, config | Main thread only: implement → run relevant checks → self-review against the baseline |
+| **Normal** | New feature with logic, 2-3 modules, additive DB change, integration | `architect-lite` *only if* contracts/design are unclear → implement (main thread, or `builder` for large work) → `reviewer-lite` |
+| **Deep** | Architecture/boundary change, complex migration, **anything directly touching auth, permissions, payments, crypto, secrets or sensitive personal data** | `architect` *only if* there's a design decision (else a 5-line threat note) → `builder` → `reviewer` ∥ `security-auditor` |
 
-Two patterns came up in research but aren't included by default — cheap to add later if
-you outgrow the starter:
+**Guardrails on the pipeline itself:**
 
-- **Bucket folders for skills** (`engineering/`, `personal/`, `misc/`, `deprecated/`, per
-  mattpocock/skills) — worth it once you have more than a handful of skills and need to
-  separate promoted ones from drafts/retired ones. Not needed at 5 skills.
-- **A human-facing doc per skill** (`docs/skills/<name>.md`, per compound-engineering-plugin
-  and mattpocock/skills) — a mirror of each `SKILL.md` written for people browsing docs
-  rather than for the model. Worth it once your skill count makes the README table
-  unwieldy.
+- Every subagent ends with the same result block: `status` (`completed` / `blocked` /
+  `needs_escalation`), `summary`, `files_changed`, `validation`, `risks`,
+  `unresolved_issues`.
+- At most **2** review → fix cycles. Still failing → `blocked`, reported to you with the
+  open findings. No silent "done".
+- `needs_escalation` moves up a mode and continues with the work already done.
+- No success claim without a verification command that actually ran.
+
+**Stage-end and pre-deploy:** if you work in stages, a stage with 2+ tasks closes with a
+full `reviewer` pass (plus `security-auditor` if it touched auth/sensitive data).
+`security-auditor` runs once before every production deploy.
+
+### Example
+
+> "Add a 'favorites' list to the customer panel" → **Normal**. The main thread checks the
+> existing customer API; contracts are clear, so no `architect-lite`. It adds the
+> endpoint, migration and UI, runs the tests, then `reviewer-lite` checks the diff:
+> authz on the new endpoint, input validation, a test exists → `completed`. You run
+> `/commit`.
+>
+> "Let admins reset another user's password" → a few lines of code, but it touches
+> authorization and credentials → **Deep**. No new architecture, so the main thread writes
+> a short threat note instead of calling `architect` (who can call it? is the old session
+> invalidated? is it logged?). `builder` implements, `reviewer` and `security-auditor`
+> run in parallel; `security-auditor` finds sessions survive the reset → `blocked` →
+> `builder` fixes → re-audit → `completed`.
+
+## Security
+
+| Layer | What it does | Where |
+|---|---|---|
+| Baseline | 8 rules every change follows (no secrets in code, validate input, parameterized queries, server-side authz, no sensitive data in logs/errors, no insecure defaults, never disable a control to pass, minimal deps) | `CLAUDE.md` |
+| Escalation | Direct contact with auth/permissions/payments/crypto/secrets/PII → Deep + `security-auditor` | `CLAUDE.md` |
+| Review | `reviewer-lite` checks the baseline on Normal changes; `security-auditor` does threat-focused audits | `.claude/agents/` |
+| Git hook | Blocks bulk `git add`, `commit -a`, `--no-verify`, force push — anywhere in a command — and scans the staged diff for secrets before every `git commit` | `.claude/hooks/guard-bash.sh` |
+| Permissions | `.env`/key files can't be `Read`; `git push` always asks; bulk add/force push denied | `.claude/settings.json` |
+| CI | Secret scan of tracked files, config validation, optional dependency audit | `.github/workflows/checks.yml` |
+
+Limits, honestly: the `Read` deny rules don't stop a Bash command from printing `.env`;
+the secret scanner only knows high-confidence patterns (cloud/API keys, private keys,
+passwords in URLs) — add [gitleaks](https://github.com/gitleaks/gitleaks) if you need
+more. The hook and the checks are deterministic; whether Claude follows the instructions
+in `CLAUDE.md` is not.
+
+## Agents
+
+| Agent | Used in | Job | Model |
+|---|---|---|---|
+| `architect-lite` | Normal, when unclear | Short plan with verified contracts of existing code | Sonnet |
+| `architect` | Deep, real design decision | Design, threat analysis, ADR | Opus |
+| `builder` | Deep; large Normal work; fixes | Implements code + tests | Sonnet |
+| `reviewer-lite` | Normal | Blocking bugs, baseline, build/tests | Sonnet |
+| `reviewer` | Deep; stage-end | Full review (architecture, tests, data, contracts) | Opus |
+| `security-auditor` | Deep security work; stage-end; pre-deploy | Threat-focused audit, read-only | Opus |
+| `debugger` | Any time something's broken | Root-cause analysis | Sonnet |
+
+Reviewers and the auditor are read-only (enforced by the validator). No Opus on your
+plan? Change `model: opus` to `sonnet` in those three files.
+
+## Skills
+
+| Skill | How it runs | Use for |
+|---|---|---|
+| `/feature <task>` | You type it | Runs the workflow with an explicit mode line, loop cap and result block |
+| `/commit` | You type it | Inspect → stage by name → review staged diff → commit. No push, no `--no-verify` |
+| `verification-before-completion` | Claude loads it | Evidence before "done"/"passes" |
+| `writing-skills` | Claude loads it | Rules for writing agents/skills |
+| `writing-tests`, `project-conventions` | You, until filled in | Placeholders — fill in, then remove `disable-model-invocation` |
+
+You don't need `/feature` — asking normally uses the same rules. `/feature` just makes
+each step visible.
+
+## Checks
+
+```bash
+python scripts/validate_template.py              # config consistency (stdlib only)
+python -m unittest discover -s scripts/tests     # validator tests
+bash scripts/tests/test_hooks.sh                 # git guard + secret scanner tests
+bash .claude/hooks/scan-secrets.sh --all         # secret scan of tracked files
+bash scripts/check-deps.sh                       # optional: dependency audit for your stack
+```
+
+The validator checks frontmatter, broken links, references to agents/skills/commands
+that don't exist, size budgets (descriptions, skill bodies, `CLAUDE.md` ≤ 130 lines),
+read-only reviewers, the permission/hook setup, and that the workflow rules (Fast has no
+subagents, the 2-cycle cap, the security override) are still present. It checks text,
+not behavior.
+
+## Customizing
+
+- **Trim** — no deep work? Delete `architect`, `reviewer`, and their mentions in
+  `CLAUDE.md` and `feature/SKILL.md`; the validator flags anything you missed. No ADRs?
+  Delete `docs/` and the ADR lines in `CLAUDE.md`.
+- **Tune the mode table** — if Fast tasks keep getting agents, or risky ones stay Fast,
+  edit the signals in `CLAUDE.md`. The security override is the one line not to weaken.
+- **Add an agent/skill** — read `writing-skills` first, end agents with the result block,
+  run the validator.
+- **Project checks** — add your build/test/lint jobs to `.github/workflows/checks.yml`.
+
+`docs/audit-v2.md` lists what changed in v2 and why.
 
 ## Attribution
 
-| Source | License | What was taken |
-|---|---|---|
-| Real portfolio project (this template's origin) | — | The tiered pipeline (fast/normal/deep), the agent roles and their cheap/expensive pairing, the ADR index+log split, the context-reading discipline, the progress-report line format |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | MIT | The model-invoked-vs-user-invoked framing as a named design axis |
-| [obra/superpowers](https://github.com/obra/superpowers) | MIT | `writing-skills` and `verification-before-completion`, condensed and rewritten, not copied verbatim |
-| [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | — | Used to cross-check agent/skill frontmatter conventions against its `tests/fixtures/sample-plugin`; its per-skill human-doc-mirror convention noted above as optional, not built |
-| [zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill) | — | Reviewed for structural ideas. Its per-skill Codex sidecar is the same convention already seen in mattpocock (out of scope — this template targets Claude Code only); its routing-coherence-check script was judged too heavy/domain-specific for a starter. Nothing adopted directly. |
-| Anthropic — [Skills](https://code.claude.com/docs/en/skills), [Sub-agents](https://code.claude.com/docs/en/sub-agents), [Best practices](https://code.claude.com/docs/en/best-practices) | — | Every frontmatter field and convention here is checked against these, current as of this template's writing |
+| Source | What was taken |
+|---|---|
+| A real portfolio project | The three-mode pipeline, agent roles, ADR index + log split, context-reading discipline |
+| [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) | Model-invoked vs. user-invoked as a design axis |
+| [obra/superpowers](https://github.com/obra/superpowers) (MIT) | `writing-skills` and `verification-before-completion`, condensed and rewritten |
+| [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | Cross-check of agent/skill frontmatter conventions |
+| Anthropic — [Skills](https://code.claude.com/docs/en/skills), [Sub-agents](https://code.claude.com/docs/en/sub-agents), [Hooks](https://code.claude.com/docs/en/hooks), [Best practices](https://code.claude.com/docs/en/best-practices) | Frontmatter, hooks and permissions conventions |
+
+MIT licensed — see [LICENSE](LICENSE).

@@ -13,10 +13,9 @@ One line per ADR: number, link, one-sentence summary. Newest at the bottom.
 
 ## ADR Notes
 
-Per-task usage log, newest entry at the top. The main/orchestrating thread appends one
-entry here after a **normal/deep** mode task finishes (all agents in the chain done) — see
-the "Using the docs" section in `CLAUDE.md`, step 6. Skip in fast mode unless an ADR was
-actually used.
+Per-task usage log, newest entry at the top. The main thread adds one entry after a task
+whose implementation was actually shaped by an ADR (any mode) — see "Context discipline"
+in `CLAUDE.md`. No entry when no ADR mattered.
 
 Template for a new entry:
 

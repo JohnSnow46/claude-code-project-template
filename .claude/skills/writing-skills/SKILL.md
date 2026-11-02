@@ -62,9 +62,10 @@ than inlining it — see [Add supporting files](https://code.claude.com/docs/en/
 ## Before shipping
 
 - Read 2-3 similar existing skills/agents in this repo first — match frontmatter shape,
-  section structure, and tone (see the `prompt-engineer` agent, which does this for you if
-  you delegate to it).
+  section structure, and tone. Agents end with the result block from `CLAUDE.md`.
 - Say out loud what specific failure this skill/agent prevents. If you can't name one,
   it's probably not needed yet.
+- Run `python scripts/validate_template.py` — it catches broken frontmatter, references
+  to agents/skills that don't exist, and over-long descriptions.
 - Give it a quick real test: a fresh session, a prompt that should trigger it, and one
   that shouldn't — confirm it fires (or doesn't) as intended before considering it done.

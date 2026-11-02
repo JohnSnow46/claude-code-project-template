@@ -4,3 +4,10 @@ Thumbs.db
 # Personal overrides — .claude/ itself is meant to be committed (see README),
 # but settings.local.json is per-developer and must never be.
 .claude/settings.local.json
+
+# Secrets — never commit. Templates (.env.example) stay tracked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key

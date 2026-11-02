@@ -41,8 +41,8 @@ Skipping any step is not verifying — it's asserting.
 - About to commit, hand off to `reviewer`, or mark a task complete without fresh output
 - Trusting a subagent's own "success" report instead of checking its actual diff/output
 
-## Why this is in the tiered pipeline
+## Where this applies
 
-`builder` and both `reviewer`/`reviewer-lite` agents point here instead of restating this
-inline — a "ready to merge" or "tests pass" verdict from either should always be backed by
-a command that ran in that same turn, not an inference from reading code.
+Everywhere a status is reported: the main thread finishing a Fast task, `builder`'s
+`validation` field, every reviewer's verdict. A result block with `status: completed`
+and no command output under `validation` is not verified.

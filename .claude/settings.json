@@ -9,6 +9,9 @@
       "Bash(git diff *)",
       "Bash(git log *)"
     ],
+    "ask": [
+      "Bash(git push *)"
+    ],
     "deny": [
       "Bash(git add -A)",
       "Bash(git add -A *)",
@@ -19,7 +22,26 @@
       "Bash(git add .)",
       "Bash(git add . *)",
       "Bash(git add :/)",
-      "Bash(git add :/ *)"
+      "Bash(git add :/ *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.sh\""
+          }
+        ]
+      }
     ]
   }
 }
