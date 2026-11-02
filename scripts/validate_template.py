@@ -244,18 +244,26 @@ def check_workflow_rules() -> None:
         "## Security baseline": "security baseline section",
         "**Security override:**": "security override (small security change → Deep)",
         "completed | blocked | needs_escalation": "result contract statuses",
-        "Max **2**": "2-cycle cap on review loops",
         "## Quality gates": "quality gates section",
     }
     for needle, what in required.items():
         if needle not in text:
             err(claude, f"missing {what}")
+    workflow = ROOT / ".claude/skills/workflow/SKILL.md"
+    if not workflow.exists():
+        err(workflow, "missing (holds the per-mode steps and loop rules)")
+    elif "Max **2**" not in workflow.read_text(encoding="utf-8"):
+        err(workflow, "missing 2-cycle cap on review loops")
+    # Mode table: header "| Signal | Trivial | Fast | Normal | Deep |", row "| Workflow | ... |".
+    cells = lambda line: [c.strip() for c in line.strip().strip("|").split("|")]
+    header = re.search(r"^\| Signal \|.*$", text, re.M)
+    row = re.search(r"^\| Workflow \|.*$", text, re.M)
+    workflow = dict(zip(cells(header.group(0))[1:], cells(row.group(0))[1:])) if header and row else {}
     for mode in ("Trivial", "Fast"):
-        row = re.search(rf"^\| \*\*{mode}\*\* \|(.*)$", text, re.M)
-        if not row or "No subagents" not in row.group(1) or re.search(r"`[a-z-]+`", row.group(1)):
+        cell = workflow.get(mode, "")
+        if "No subagents" not in cell or re.search(r"`[a-z-]+`", cell):
             err(claude, f"{mode} workflow must run without subagents")
-    normal = re.search(r"^\| \*\*Normal\*\* \|(.*)$", text, re.M)
-    if normal and ("`architect`" in normal.group(1) or "`reviewer`" in normal.group(1)):
+    if "`architect`" in workflow.get("Normal", "") or "`reviewer`" in workflow.get("Normal", ""):
         err(claude, "Normal workflow must not use full architect/reviewer")
     feature = ROOT / ".claude/skills/feature/SKILL.md"
     if feature.exists():

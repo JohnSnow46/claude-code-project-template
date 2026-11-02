@@ -61,15 +61,15 @@ class ValidateTemplateTest(unittest.TestCase):
         self.assertFails("broken link")
 
     def test_fast_mode_must_not_spawn_agents(self):
-        self.edit("CLAUDE.md", "| **Fast** | You implement", "| **Fast** | `builder` → `reviewer-lite`. You implement")
+        self.edit("CLAUDE.md", "| You implement →", "| `builder` → `reviewer-lite`. You implement →")
         self.assertFails("Fast workflow must run without subagents")
 
     def test_trivial_mode_must_not_spawn_agents(self):
-        self.edit("CLAUDE.md", "| **Trivial** | You make the edit", "| **Trivial** | `reviewer-lite`. You make the edit")
+        self.edit("CLAUDE.md", "| You edit →", "| `reviewer-lite`. You edit →")
         self.assertFails("Trivial workflow must run without subagents")
 
     def test_loop_cap_required(self):
-        self.edit("CLAUDE.md", "Max **2**", "Up to a few")
+        self.edit(".claude/skills/workflow/SKILL.md", "Max **2**", "Up to a few")
         self.assertFails("2-cycle cap")
 
     def test_security_override_required(self):

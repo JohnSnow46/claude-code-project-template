@@ -38,7 +38,7 @@ lag behind `master`).
 ## What's in the box
 
 ```
-CLAUDE.md                     project instructions: modes, baseline, quality gates, result contract
+CLAUDE.md                     project instructions: mode table, baseline, gates, result block
 USAGE.md                      step-by-step setup
 docs/                         security reference, ADR index + example ADR, docs conventions, v2 audit
 .claude/
@@ -49,7 +49,7 @@ docs/                         security reference, ADR index + example ADR, docs 
   hooks/guard-files.sh        denies Read/Edit/Write/Grep on secret files
   hooks/scan-secrets.sh       built-in patterns + gitleaks when installed
   agents/                     9 subagents (2 optional)
-  skills/                     6 skills
+  skills/                     7 skills (workflow: per-mode steps, loops, docs procedure)
 scripts/
   quality-gates.sh            runs the gates in order; --detect suggests a config
   configure.py                switch profile, set agent models + fallback chain
@@ -77,7 +77,8 @@ flowchart LR
     B[Security baseline] -.applies to.-> TR & F & N & D
 ```
 
-The main thread picks the mode itself from the table in `CLAUDE.md` — no classifier
+The main thread picks the mode itself from the table in `CLAUDE.md` and, above Trivial,
+follows the `workflow` skill — no classifier
 agent, no question to you. When unsure it picks the lower mode and escalates if a real
 signal appears.
 
@@ -131,7 +132,7 @@ full `reviewer` pass (plus `security-auditor` if it touched auth/sensitive data)
 | Layer | What it does | Where |
 |---|---|---|
 | Baseline | 8 rules every change follows (no secrets in code, validate input, parameterized queries, server-side authz, no sensitive data in logs/errors, no insecure defaults, never disable a control to pass, minimal deps) | `CLAUDE.md` |
-| Escalation | Direct contact with auth/permissions/payments/crypto/secrets/PII → Deep + `security-auditor` | `CLAUDE.md` |
+| Escalation | Direct contact with auth/permissions/payments/crypto/secrets/PII → Deep + `security-auditor` | `CLAUDE.md`, `workflow` skill |
 | Review | `reviewer-lite` checks the baseline on Normal changes; `security-auditor` does threat-focused audits | `.claude/agents/` |
 | Bash hook | **Denies** bulk `git add`, `commit -a`, hook bypass (`--no-verify`, `core.hooksPath`), force/mirror push, reading secret files (`cat`/`base64`/`python -c` … `.env`), and any commit whose staged diff fails the secret scan. **Asks** on `reset --hard`, `clean -f`, `branch -D`, remote delete, history rewrites; denies those too in auto/bypass mode, where nobody would see the prompt. Same result however git is invoked (`-c`, `-C`, `sh -c`, chains, quotes) | `.claude/hooks/guard-bash.sh` |
 | File hook | Denies Read/Edit/Write/Grep on `.env*` (not `.env.example`), keys, SSH/cloud credentials. Second layer behind the deny rules | `.claude/hooks/guard-files.sh` |
@@ -195,6 +196,7 @@ rule. The validator fails if `settings.json` drifts from its profile.
 |---|---|---|
 | `/feature <task>` | You type it | Runs the workflow with an explicit mode line, loop cap and result block |
 | `/commit` | You type it | Inspect → stage by name → review staged diff → commit. No push, no `--no-verify` |
+| `workflow` | Claude loads it | Per-mode steps, review loops, stage-end, ADR/docs procedure — kept out of `CLAUDE.md` so it only loads when needed |
 | `verification-before-completion` | Claude loads it | Evidence before "done"/"passes" |
 | `writing-skills` | Claude loads it | Rules for writing agents/skills |
 | `writing-tests`, `project-conventions` | You, until filled in | Placeholders — fill in, then remove `disable-model-invocation` |
@@ -228,7 +230,7 @@ validator catches it.
 ## Customizing
 
 - **Trim** — no deep work? Delete `architect`, `reviewer`, and their mentions in
-  `CLAUDE.md` and `feature/SKILL.md`; the validator flags anything you missed. No ADRs?
+  `CLAUDE.md`, `workflow/SKILL.md` and `feature/SKILL.md`; the validator flags anything you missed. No ADRs?
   Delete `docs/` and the ADR lines in `CLAUDE.md`.
 - **Tune the mode table** — if Fast tasks keep getting agents, or risky ones stay Fast,
   edit the signals in `CLAUDE.md`. The security override is the one line not to weaken.

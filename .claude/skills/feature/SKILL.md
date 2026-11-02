@@ -5,8 +5,8 @@ argument-hint: [task description]
 disable-model-invocation: true
 ---
 
-Runs `$ARGUMENTS` through the workflow in `CLAUDE.md` ("Work modes", "Agent results and
-loops"), making each step explicit.
+Runs `$ARGUMENTS` through the `CLAUDE.md` mode table and the `workflow` skill, making each
+step explicit.
 
 ## 1. Classify
 
@@ -18,25 +18,9 @@ pick the lowest mode that fits. Output one line first:
 
 ## 2. Run
 
-- **Trivial** — make the edit yourself; run only the gate it can affect (none for
-  comment/prose-only edits). No subagents.
-- **Fast** — implement yourself, run the quality gates, self-review against the
-  security baseline. No subagents.
-- **Normal** — `architect-lite` only if contracts/design are unclear → implement (you, or
-  `builder` for large work) → `reviewer-lite`.
-- **Deep** — `architect` (if there's a design decision; else write a 5-line threat note)
-  → `builder` → `reviewer`, plus `security-auditor` in parallel if security-sensitive
-  (then `reviewer` skips security).
-
-Optional, Normal/Deep only and only on their signal (see `CLAUDE.md`): `test-engineer`
-after implementation for a changed user-facing flow/integration boundary;
-`performance-analyst` before or after implementation for a concrete performance signal.
-
-Before any reviewer runs, run `bash scripts/quality-gates.sh`; a FAIL goes back to the
-implementer first (it doesn't count as a review cycle).
-
-Pass each agent the task plus the previous agent's full output (plan, verified
-contracts, threat note).
+Follow the chosen mode's steps in the `workflow` skill (agents, optional agents, quality
+gates before any reviewer). Pass each agent the task plus the previous agent's full
+output (plan, verified contracts, threat note).
 
 ## 3. Handle results
 
@@ -52,7 +36,7 @@ Don't trust a subagent's "passes" — check its `validation` shows a command and
 
 ## 4. Stage end (only if this task closes a stage)
 
-Per `CLAUDE.md`: full `reviewer` if the stage had 2+ tasks; `security-auditor` if it
+Per the `workflow` skill: full `reviewer` if the stage had 2+ tasks; `security-auditor` if it
 touched auth/sensitive data; in parallel. In-scope findings → one fix batch (counts
 toward the 2-cycle cap). Out-of-scope → report as separate tasks.
 

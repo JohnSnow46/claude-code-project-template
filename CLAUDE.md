@@ -4,10 +4,8 @@
 
 ## Docs (don't duplicate their content here)
 
-| Area | File |
-|---|---|
-| [e.g. domain model / API layer — one row per area doc, see docs/README.md] | `docs/[area].md` (has `## Index`) |
-| Architectural decisions | `docs/decisions.md` (index + `## ADR Notes`) → `docs/adr/ADR-NNNN.md` |
+- [Area docs, one per area, each with a `## Index`: `docs/[area].md` — see docs/README.md]
+- Architectural decisions: `docs/decisions.md` (index + `## ADR Notes`) → `docs/adr/ADR-NNNN.md`
 
 ## Work modes
 
@@ -20,31 +18,13 @@ Pick the mode yourself (no question, no classifier agent). Default **Trivial**, 
 | Business rule | none (no logic change) | none | single, simple | complex / multi-entity |
 | Schema/migration | none | none | additive | changes existing data/relations |
 | Examples | typo, copy, config value, rename within one file, comment/doc edit | UI, styling, small fix, simple CRUD, docs, config | endpoint with logic, new module, DB change | major refactor, critical infra |
+| Workflow | You edit → only the gate it can affect. No subagents. | You implement → quality gates → self-review against the baseline. No subagents. | `architect-lite` if unclear → implement → gates → `reviewer-lite` | `architect` or a threat note → `builder` → gates → `reviewer` ∥ `security-auditor` |
 
 **Security override:** a change that directly touches authentication, authorization,
 permissions/roles, payments, cryptography, secrets, or sensitive personal data is
-**Deep**, however small. Indirect contact (e.g. a new endpoint behind existing auth) is
-not — apply the baseline below.
+**Deep**, however small. Indirect contact (e.g. a new endpoint behind existing auth) isn't.
 
-| Mode | Workflow |
-|---|---|
-| **Trivial** | You make the edit → run only the gate it can affect (none for comment/prose-only edits; say "not run: prose only"). No subagents. |
-| **Fast** | You implement (you are the builder) → quality gates → self-review against the security baseline. No subagents. |
-| **Normal** | Short assessment (`architect-lite` only if contracts/design are unclear) → implement (you, or `builder` if the work is large) → quality gates → `reviewer-lite`. |
-| **Deep** | `architect` (only for a real design decision; for a security change without one, write a 5-line threat note yourself) → `builder` → quality gates → `reviewer` ∥ `security-auditor` (if security-sensitive). |
-
-**Optional agents** (Normal/Deep only, and only when the signal exists): `test-engineer`
-when a user-facing flow or integration boundary changes and the project has E2E/integration
-tests; `performance-analyst` when there's a concrete performance signal (slowdown, budget,
-hot path or large-table query changed).
-
-Spawn an agent only when it pays for itself (isolated context for large work, or an
-independent review). Never two agents checking the same concern.
-
-**Stage-end / pre-deploy:** if the project tracks stages, when a stage with 2+ tasks
-closes run a full `reviewer` over the stage; if it touched auth/sensitive data, also
-`security-auditor`. Before every production deploy, `security-auditor` runs once over
-everything since the last deploy.
+Above Trivial, or for ADR/docs work: follow the `workflow` skill (steps, loops, docs).
 
 ## Security baseline (every change, every mode)
 
@@ -56,58 +36,29 @@ everything since the last deploy.
 - Never disable a security control, test or check to make something pass.
 - New dependency only when needed; prefer maintained, widely used ones.
 - Follow the framework's own security mechanisms instead of hand-rolling them.
+- Security issue outside the task? Report it; don't ignore it or fix it silently.
 
-Found a security issue outside the task? Report it — don't ignore it because the task is
-Fast, and don't fix it silently out of scope.
+## Quality gates and results
 
-## Agent results and loops
-
-Every subagent ends with:
+Before reporting done: `bash scripts/quality-gates.sh` (Trivial: only the affected gate).
+Any FAIL → fix or report `blocked`; never claim success on failed/unrun checks. Subagents end with:
 
 ```
 status: completed | blocked | needs_escalation
 summary: …
 files_changed: …
-validation: <commands run + result>
+validation: <commands run + RESULT: line; unrun gates as "not run: <reason>">
 risks: …
 unresolved_issues: …
 ```
 
-- Max **2** reviewer → builder correction cycles; after that, stop with `blocked` and
-  report the open findings.
-- `needs_escalation` → move up a mode and continue with what exists; don't restart.
-- Never report success with failed/unrun verification or an open Blocking/Critical
-  finding — say `blocked` and why.
-
-## Quality gates
-
-Before reporting `completed` in any mode, run `bash scripts/quality-gates.sh` (or the
-gates the change can affect: `… test lint`). Order: test → lint → typecheck → build →
-security; commands live in `.claude/quality-gates.conf`. Any FAIL → fix it or report
-`blocked`. Put the `RESULT:` line and failure counts under `validation`; a gate you didn't
-run is listed as "not run: <reason>", never omitted.
-
-## Context discipline
-
-- Read only files related to the task; grep before reading; widen scope only when needed.
-- ADRs: `## ADR Notes` → `## Index` in `docs/decisions.md` → open only the specific
-  `docs/adr/ADR-NNNN.md`. Files over ~150 lines: read via their `## Index` + offset.
-- Don't ask what you can check (`git status`, `git log`, repo files). Ask only product
-  decisions, one round max.
-- If an ADR shaped the implementation, add an entry to `## ADR Notes` afterwards.
-- No reports or docs for trivial tasks.
-
-## Git
-
 Commit/push only when asked (`/commit`). Stage by name, review the staged diff, no `--no-verify`/force-push.
 
-**Priority order:** [e.g. "1) correctness/security, 2) working feature, 3) consistency".
-Don't design for scale the project doesn't need.]
+**Priority order:** [e.g. "correctness/security > working feature > consistency"; no unneeded scale.]
 
 ## Critical constraints
 
-[Load-bearing invariants that cause incidents if violated, each pointing to its doc/ADR.
-Delete this section until you have one.]
+[Load-bearing invariants, each pointing to its doc/ADR. Delete until you have one.]
 
 ## Global conventions
 
@@ -118,8 +69,7 @@ Delete this section until you have one.]
 ```bash
 [install]
 [test]          # plus: how to run a single test
-[lint/typecheck]
-[build]
+[lint/typecheck/build]
 [run/dev]
 bash scripts/quality-gates.sh   # all gates, from .claude/quality-gates.conf
 ```

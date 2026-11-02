@@ -14,8 +14,8 @@ One line per ADR: number, link, one-sentence summary. Newest at the bottom.
 ## ADR Notes
 
 Per-task usage log, newest entry at the top. The main thread adds one entry after a task
-whose implementation was actually shaped by an ADR (any mode) — see "Context discipline"
-in `CLAUDE.md`. No entry when no ADR mattered.
+whose implementation was actually shaped by an ADR (any mode) — see "Using the docs"
+in `.claude/skills/workflow/SKILL.md`. No entry when no ADR mattered.
 
 Template for a new entry:
 

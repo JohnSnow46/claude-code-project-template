@@ -117,7 +117,8 @@ last deploy.
 ## 6. Skills
 
 - `/feature` and `/commit` run only when you type them.
-- `writing-skills` and `verification-before-completion` load automatically when relevant.
+- `workflow`, `writing-skills` and `verification-before-completion` load automatically
+  when relevant. `workflow` holds the per-mode steps that used to live in `CLAUDE.md`.
 - `writing-tests` and `project-conventions` are placeholders. Fill them in, then delete
   the `disable-model-invocation: true` line so Claude loads them on its own.
 
@@ -149,7 +150,7 @@ Run the same locally — see the Checks section in the README.
 - **Add** — read `writing-skills`, end agents with the result block from `CLAUDE.md`,
   then run `python scripts/validate_template.py`.
 - **Trim** — delete the file, then run the validator: it lists every remaining reference
-  (in `CLAUDE.md`, `feature/SKILL.md`, README) to fix.
+  (in `CLAUDE.md`, `workflow/SKILL.md`, `feature/SKILL.md`, README) to fix.
 - Common trims: no deep work → drop `architect` and `reviewer`; no ADRs → drop `docs/`
   and the ADR lines in `CLAUDE.md`; solo project with no review habit → keep
   `reviewer-lite` anyway for Normal work, it's the cheapest independent check you have.

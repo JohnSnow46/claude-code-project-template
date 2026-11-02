@@ -17,7 +17,7 @@ whether the full section is worth opening.
 - Webhook handling → §7
 ```
 
-Agents (and CLAUDE.md, "Context discipline") are instructed to read the index first,
+Agents (and the `workflow` skill, "Using the docs") are instructed to read the index first,
 then jump to a specific section with `Read`'s `offset`/`limit`, rather than reading the
 whole file. This is the single biggest lever for not blowing the context window on docs
 that grow over time.
