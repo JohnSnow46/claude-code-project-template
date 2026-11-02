@@ -32,6 +32,8 @@
       "Bash(git push -f *)",
       "Bash(git push --mirror *)",
       "Bash(git commit --no-verify *)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
       "Read(./.env)",
       "Read(**/.env)",
       "Read(**/.env.*)",

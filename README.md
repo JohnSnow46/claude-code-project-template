@@ -29,6 +29,16 @@ Then fill in the `[placeholders]` in `CLAUDE.md` (project, commands, conventions
 your build/test commands to `permissions.allow` in `.claude/settings.json`. Install
 [gitleaks](https://github.com/gitleaks/gitleaks#installing) locally; the `team` and
 `high-security` profiles require it.
+
+**What `.claude/settings.json` enforces** (rules, not prose): `deny` blocks bulk
+`git add`, force/mirror push, `--no-verify`, `rm -rf` and reading/editing secret files;
+`ask` prompts on `git push`, `git reset --hard`, `git clean`. Read-only commands (`ls`,
+`cat`, `grep`, `git status`/`diff`/`log`) already run without a prompt. Two PreToolUse
+hooks back this up: `guard-bash.sh` (unsafe git, secret reads, secret scan on commit) and
+`guard-files.sh` (secret files via Read/Edit/Write/Grep). To remove a hook, delete its
+entry under `hooks.PreToolUse` in `settings.json` and its line in `REQUIRED_HOOKS` in
+`scripts/validate_template.py`. Details: [docs/security.md](docs/security.md).
+
 [USAGE.md](USAGE.md) walks through it step by step. Already have a `CLAUDE.md` or a CI
 workflow? Merge by hand.
 
@@ -136,7 +146,7 @@ full `reviewer` pass (plus `security-auditor` if it touched auth/sensitive data)
 | Review | `reviewer-lite` checks the baseline on Normal changes; `security-auditor` does threat-focused audits | `.claude/agents/` |
 | Bash hook | **Denies** bulk `git add`, `commit -a`, hook bypass (`--no-verify`, `core.hooksPath`), force/mirror push, reading secret files (`cat`/`base64`/`python -c` … `.env`), and any commit whose staged diff fails the secret scan. **Asks** on `reset --hard`, `clean -f`, `branch -D`, remote delete, history rewrites; denies those too in auto/bypass mode, where nobody would see the prompt. Same result however git is invoked (`-c`, `-C`, `sh -c`, chains, quotes) | `.claude/hooks/guard-bash.sh` |
 | File hook | Denies Read/Edit/Write/Grep on `.env*` (not `.env.example`), keys, SSH/cloud credentials. Second layer behind the deny rules | `.claude/hooks/guard-files.sh` |
-| Permissions | Secret files unreadable/uneditable at any depth; `git push`/`reset --hard`/`clean` ask; bulk add/force push denied; hooks fail closed (`onFailure: block`) | `.claude/settings.json` |
+| Permissions | Secret files unreadable/uneditable at any depth; `git push`/`reset --hard`/`clean` ask; bulk add/force push/`rm -rf` denied; hooks fail closed (`onFailure: block`) | `.claude/settings.json` |
 | Secret scan | Built-in high-confidence patterns as a floor + **gitleaks** whenever installed (required in `team`/`high-security` and CI). Runs on Claude's commits, everyone's commits (git pre-commit hook), and in CI over the full history | `scan-secrets.sh`, `scripts/git-hooks/`, CI |
 | Profiles | `solo` / `team` / `high-security` tighten all of the above | `.claude/profiles/` |
 | CI | Quality gates on Linux, macOS and Windows; pinned, checksum-verified gitleaks over full history | `.github/workflows/checks.yml` |

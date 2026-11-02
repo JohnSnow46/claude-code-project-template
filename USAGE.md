@@ -58,7 +58,7 @@ Don't put `[placeholders]` inside `Bash(...)` — they'd match literally.
 **`permissions.ask`** — `git push`, `git reset --hard`, `git clean` always ask.
 
 **`permissions.deny`** — wins over `allow`. Ships with bulk `git add`, force/mirror
-push, and `Read`/`Edit` of `.env`, `.env.*`, keys and keystores **at any depth**, plus
+push, `rm -rf`/`rm -fr`, and `Read`/`Edit` of `.env`, `.env.*`, keys and keystores **at any depth**, plus
 `~/.ssh`, `~/.aws`, `~/.gnupg`. `.env.example/.sample/.template` are carved out with
 `!` rules, so Claude can still read the template.
 
