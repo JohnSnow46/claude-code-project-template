@@ -39,7 +39,16 @@ Replace every `[placeholder]`:
 
 Leave the Work modes table, the security override and the Security baseline alone unless
 you have a reason; tune them later (step 4). Keep the file short — it loads into every
-conversation; the validator fails above 130 lines.
+conversation; the validator fails above 130 lines. Write only what Claude can't learn
+from the repo (decisions, gotchas, commands); not your architecture or file layout. The
+`<!-- -->` notes cost no context and can stay. Run `/doctor prompt-audit` now and then to
+catch stale or contradictory instructions across `CLAUDE.md`, rules, skills and agents.
+
+- Repo already has an `AGENTS.md` for other tools? Claude Code reads it only when there's
+  no `CLAUDE.md`. Keep one source: add a line `@AGENTS.md` to `CLAUDE.md`.
+- Personal instructions go in `CLAUDE.local.md` (gitignored).
+- Using worktrees (`claude -w`, parallel sessions)? List the gitignored files a fresh
+  checkout needs (e.g. `.env`) in `.worktreeinclude` at the repo root.
 
 ## 3. Fill in `.claude/settings.json`
 
@@ -119,8 +128,11 @@ last deploy.
 - `/feature` and `/commit` run only when you type them.
 - `workflow`, `writing-skills` and `verification-before-completion` load automatically
   when relevant. `workflow` holds the per-mode steps that used to live in `CLAUDE.md`.
-- `writing-tests` and `project-conventions` are placeholders. Fill them in, then delete
-  the `disable-model-invocation: true` line so Claude loads them on its own.
+- `writing-tests` is a placeholder. Fill it in, then delete the
+  `disable-model-invocation: true` line so Claude loads it on its own.
+- Conventions for one part of the code (API, migrations, UI) go in `.claude/rules/` with a
+  `paths:` filter, so they load only when Claude works there — see
+  `.claude/rules/api.md.example`. Global ones go in `CLAUDE.md`.
 
 ## 7. Docs and ADRs
 

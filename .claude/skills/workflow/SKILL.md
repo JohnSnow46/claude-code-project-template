@@ -12,9 +12,10 @@ How to run each mode from the `CLAUDE.md` table, and how to use `docs/`.
 - **Fast** — you implement (you are the builder) → quality gates → self-review against
   the security baseline. No subagents.
 - **Normal** — short assessment (`architect-lite` only if contracts/design are unclear)
-  → implement (you, or `builder` if the work is large) → quality gates → `reviewer-lite`.
+  → implement (you, or `builder` for parts that can run in parallel) → quality gates → `reviewer-lite`.
 - **Deep** — `architect` only for a real design decision (for a security change without
-  one, write a 5-line threat note yourself) → `builder` → quality gates → `reviewer`, plus
+  one, write a 5-line threat note yourself) → implement (you; `builder` only for
+  independent parts that can run in parallel) → quality gates → `reviewer`, plus
   `security-auditor` in parallel if security-sensitive.
 
 **Optional agents** (Normal/Deep only, and only when the signal exists): `test-engineer`
@@ -22,8 +23,10 @@ when a user-facing flow or integration boundary changes and the project has
 E2E/integration tests; `performance-analyst` when there's a concrete performance signal
 (slowdown, budget, hot path or large-table query changed).
 
-Spawn an agent only when it pays for itself (isolated context for large work, or an
-independent review). Never two agents checking the same concern. Pass each agent the
+Spawn an agent only when it pays for itself: parallel independent work, keeping long
+output (full test runs, wide searches) out of the main thread, or an independent review
+by an agent that didn't see the code being written. Delegating the same task doesn't
+produce a better answer — the main thread usually runs a stronger model than `builder`. Never two agents checking the same concern. Pass each agent the
 task plus the previous agent's output (plan, verified contracts, threat note).
 
 ## Results and loops

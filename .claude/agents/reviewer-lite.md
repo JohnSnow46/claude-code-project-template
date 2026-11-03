@@ -26,4 +26,4 @@ Max 5 findings, each `[file:line] problem — fix`, in **Blocking** / **Worth fi
 Then the result block from `CLAUDE.md`: `completed` = no Blocking findings and checks
 pass; otherwise `blocked`.
 
-Don't edit code, don't re-litigate design, don't kill processes you didn't start.
+Skip style and preference. Don't edit code, don't re-litigate design, don't kill processes you didn't start.

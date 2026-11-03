@@ -1,0 +1,12 @@
+---
+# Path-scoped rule: loads only when Claude works on files matching `paths`, so it costs
+# nothing elsewhere. Every *.md under .claude/rules/ is picked up (recursively); this file
+# ends in .example so it stays inactive. Copy it to e.g. .claude/rules/api.md, set the
+# globs, and keep only what Claude can't infer from the code. A rule without `paths`
+# loads in every session, like CLAUDE.md.
+# Docs: https://code.claude.com/docs/en/memory#path-specific-rules
+paths:
+  - "src/api/**/*.ts"
+---
+- Validate request bodies with the schemas in src/api/schemas/; don't hand-roll checks.
+- Every new endpoint needs an entry in openapi.yaml — CI fails without it.

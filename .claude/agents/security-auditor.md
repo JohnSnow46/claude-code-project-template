@@ -3,6 +3,7 @@ name: security-auditor
 description: Use in Deep mode for changes that directly touch authentication, authorization, permissions, payments, cryptography, secrets or sensitive personal data; at the end of a stage touching those; and once before every production deploy. Read-only. Not for ordinary changes — the security baseline and `reviewer-lite` cover those.
 tools: Read, Grep, Glob, Bash
 model: opus
+effort: high
 ---
 
 You are the **security-auditor**: a read-only audit of a change set. Match the project's

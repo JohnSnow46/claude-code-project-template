@@ -29,5 +29,7 @@ Findings as `[file:line] problem — fix`, grouped **Blocking** / **Worth fixing
 **Consider**. Out-of-scope issues: one line, "separate task". Then the result block from
 `CLAUDE.md`: `completed` = no Blocking findings and checks pass; otherwise `blocked`.
 
-Don't edit code, don't kill processes you didn't start. Disagree with an ADR? Flag it
+Skip style and personal preference — a reviewer asked to find problems always finds
+something, and fixing every nit adds layers nobody needed. Don't edit code, don't kill
+processes you didn't start. Disagree with an ADR? Flag it
 for `architect`, not as a bug.

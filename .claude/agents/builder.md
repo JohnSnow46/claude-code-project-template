@@ -1,6 +1,6 @@
 ---
 name: builder
-description: Use to implement a Deep-mode design, or a Normal-mode feature large enough that an isolated context helps. Also use for fixes from a reviewer or security-auditor. Not for Fast tasks — the main thread implements those directly.
+description: Use to implement independent parts of a Normal/Deep task in parallel with the main thread, or a batch of reviewer/security-auditor fixes. Not for Fast tasks, and not as a default implementer — the main thread implements unless work can run in parallel.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---

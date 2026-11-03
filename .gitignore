@@ -13,3 +13,6 @@ Thumbs.db
 *.key
 
 __pycache__/
+
+# Personal Claude Code instructions (see CLAUDE.md)
+CLAUDE.local.md

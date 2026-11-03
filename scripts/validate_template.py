@@ -25,7 +25,8 @@ READ_ONLY_AGENTS = re.compile(r"(reviewer|auditor|analyst)")
 AGENT_LIKE = re.compile(r"^[a-z]+(-[a-z]+)*-(architect|builder|reviewer|auditor|debugger|engineer|analyst|lite)$"
                         r"|^(architect|builder|reviewer|debugger)$")
 BUILTIN_COMMANDS = {"compact", "context", "clear", "help", "config", "model", "agents", "init",
-                    "memory", "permissions", "hooks", "review", "code-review", "security-review"}
+                    "memory", "permissions", "hooks", "review", "code-review", "security-review",
+                    "doctor", "usage", "effort", "verify", "goal", "rewind", "sandbox", "loop", "batch"}
 # Historical docs may name agents that no longer exist.
 REFERENCE_EXEMPT = {"docs/audit-v2.md"}
 REQUIRED_DENY = ["Bash(git add -A)", "Bash(git add .)", "Bash(git add --all)",
@@ -35,6 +36,18 @@ REQUIRED_DENY = ["Bash(git add -A)", "Bash(git add .)", "Bash(git add --all)",
 REQUIRED_HOOKS = {"guard-bash.sh": {"Bash"},
                   "guard-files.sh": {"Read", "Edit", "Write", "MultiEdit", "NotebookEdit", "Grep"}}
 GATES = ("test", "lint", "typecheck", "build")
+# Claude Code silently ignores unknown frontmatter fields, so a typo ("allowed_tools",
+# "disableModelInvocation") quietly drops that setting. Lists from code.claude.com/docs
+# (sub-agents, skills) as of Nov 2026 — add new fields here when the docs add them.
+AGENT_FIELDS = {"name", "description", "tools", "disallowedTools", "model", "permissionMode",
+                "skills", "mcpServers", "hooks", "memory", "maxTurns", "autoCompactWindow",
+                "background", "isolation", "effort", "omitClaudeMd", "color", "initialPrompt",
+                "experimental"}
+SKILL_FIELDS = {"name", "description", "when_to_use", "argument-hint", "arguments",
+                "disable-model-invocation", "user-invocable", "allowed-tools", "disallowed-tools",
+                "model", "effort", "context", "agent", "background", "hooks", "paths", "shell",
+                "metadata", "license", "compatibility"}
+EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 FORBIDDEN_ALLOW = re.compile(r"^Bash(\(\*\))?$|^Bash\((git push|git add|rm |sudo|curl|wget)")
 
 errors: list[str] = []
@@ -84,6 +97,7 @@ def check_agents() -> set[str]:
             err(path, f"unknown model '{fm['model']}'")
         if len(fm.get("description", "")) > MAX_DESCRIPTION_CHARS:
             err(path, f"description over {MAX_DESCRIPTION_CHARS} chars")
+        check_fields(path, fm, AGENT_FIELDS)
         tools = {t.strip() for t in fm.get("tools", "").split(",")}
         if READ_ONLY_AGENTS.search(name) and tools & {"Write", "Edit", "NotebookEdit"}:
             err(path, "review/audit agents must be read-only (no Write/Edit)")
@@ -92,6 +106,22 @@ def check_agents() -> set[str]:
         if words(body) > MAX_AGENT_WORDS:
             err(path, f"body over {MAX_AGENT_WORDS} words")
     return names
+
+
+def check_fields(path: Path, fm: dict, known: set[str]) -> None:
+    for key in sorted(set(fm) - known):
+        err(path, f"unknown frontmatter field '{key}' (Claude Code would silently ignore it)")
+    if fm.get("effort") and fm["effort"] not in EFFORTS:
+        err(path, f"effort must be one of {', '.join(sorted(EFFORTS))}")
+
+
+def check_rules() -> None:
+    for path in sorted((ROOT / ".claude/rules").rglob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        if text.startswith("---"):
+            fm, _ = frontmatter(path)
+            for key in sorted(set(fm) - {"paths"}):
+                err(path, f"unknown rule frontmatter field '{key}' (only 'paths' is supported)")
 
 
 def check_skills() -> set[str]:
@@ -106,6 +136,7 @@ def check_skills() -> set[str]:
             err(path, "missing 'description'")
         if len(fm.get("description", "")) > MAX_DESCRIPTION_CHARS:
             err(path, f"description over {MAX_DESCRIPTION_CHARS} chars")
+        check_fields(path, fm, SKILL_FIELDS)
         if fm.get("disable-model-invocation") not in (None, "true", "false"):
             err(path, "disable-model-invocation must be true or false")
         if words(body) > MAX_SKILL_WORDS:
@@ -169,6 +200,12 @@ def check_settings() -> None:
                     err(path, f"hook runs missing .claude/hooks/{script}")
                 if h.get("onFailure") != "block":
                     err(path, f"hook {script} must set \"onFailure\": \"block\" (fail closed)")
+    for event, entries in settings.get("hooks", {}).items():
+        for entry in entries:
+            for h in entry.get("hooks", []):
+                for script in re.findall(r"\.claude/hooks/([\w.-]+\.sh)", h.get("command", "")):
+                    if not (ROOT / ".claude/hooks" / script).exists():
+                        err(path, f"{event} hook runs missing .claude/hooks/{script}")
     for script, tools in REQUIRED_HOOKS.items():
         missing = tools - covered.get(script, set())
         if missing:
@@ -277,6 +314,7 @@ def main() -> int:
     agents = check_agents()
     skills = check_skills()
     check_references(agents, skills)
+    check_rules()
     check_settings()
     check_quality_gates()
     check_workflow_rules()

@@ -79,7 +79,7 @@ flowchart LR
     C -->|1 file, no logic change| TR[Trivial<br/>main thread edits<br/>affected gate only]
     C -->|small, low risk| F[Fast<br/>main thread implements<br/>checks + self-review]
     C -->|feature, 2-3 modules,<br/>DB change| N[Normal<br/>architect-lite if unclear<br/>implement<br/>reviewer-lite]
-    C -->|architecture, complex migration,<br/>OR touches auth/payments/<br/>crypto/secrets/PII| D[Deep<br/>architect if a design decision<br/>builder<br/>reviewer + security-auditor]
+    C -->|architecture, complex migration,<br/>OR touches auth/payments/<br/>crypto/secrets/PII| D[Deep<br/>architect if a design decision<br/>implement<br/>reviewer + security-auditor]
     TR --> R[Result]
     F --> R
     N --> R
@@ -96,8 +96,8 @@ signal appears.
 |---|---|---|
 | **Trivial** (default) | 1 file, a few lines, no logic change: typo, copy, config value, rename within one file, comment/doc edit | Main thread only: edit → the one gate the change can affect (none for prose) |
 | **Fast** (next step up) | UI, styling, small fixes, simple CRUD, docs, config | Main thread only, acting as builder: implement → quality gates → self-review against the baseline |
-| **Normal** | New feature with logic, 2-3 modules, additive DB change, integration | `architect-lite` *only if* contracts/design are unclear → implement (main thread, or `builder` for large work) → quality gates → `reviewer-lite` |
-| **Deep** | Architecture/boundary change, complex migration, **anything directly touching auth, permissions, payments, crypto, secrets or sensitive personal data** | `architect` *only if* there's a design decision (else a 5-line threat note) → `builder` → quality gates → `reviewer` ∥ `security-auditor` |
+| **Normal** | New feature with logic, 2-3 modules, additive DB change, integration | `architect-lite` *only if* contracts/design are unclear → implement (main thread, or `builder` for parallel parts) → quality gates → `reviewer-lite` |
+| **Deep** | Architecture/boundary change, complex migration, **anything directly touching auth, permissions, payments, crypto, secrets or sensitive personal data** | `architect` *only if* there's a design decision (else a 5-line threat note) → implement (main thread; `builder` only for parallel parts) → quality gates → `reviewer` ∥ `security-auditor` |
 
 **Optional agents**, Normal/Deep only and only when their signal exists: `test-engineer`
 (user-facing flow or integration boundary changed, project has E2E/integration tests) and
@@ -133,9 +133,9 @@ full `reviewer` pass (plus `security-auditor` if it touched auth/sensitive data)
 > "Let admins reset another user's password" → a few lines of code, but it touches
 > authorization and credentials → **Deep**. No new architecture, so the main thread writes
 > a short threat note instead of calling `architect` (who can call it? is the old session
-> invalidated? is it logged?). `builder` implements, `reviewer` and `security-auditor`
+> invalidated? is it logged?). The main thread implements, `reviewer` and `security-auditor`
 > run in parallel; `security-auditor` finds sessions survive the reset → `blocked` →
-> `builder` fixes → re-audit → `completed`.
+> the main thread fixes → re-audit → `completed`.
 
 ## Security
 
@@ -147,6 +147,7 @@ full `reviewer` pass (plus `security-auditor` if it touched auth/sensitive data)
 | Bash hook | **Denies** bulk `git add`, `commit -a`, hook bypass (`--no-verify`, `core.hooksPath`), force/mirror push, reading secret files (`cat`/`base64`/`python -c` … `.env`), and any commit whose staged diff fails the secret scan. **Asks** on `reset --hard`, `clean -f`, `branch -D`, remote delete, history rewrites; denies those too in auto/bypass mode, where nobody would see the prompt. Same result however git is invoked (`-c`, `-C`, `sh -c`, chains, quotes) | `.claude/hooks/guard-bash.sh` |
 | File hook | Denies Read/Edit/Write/Grep on `.env*` (not `.env.example`), keys, SSH/cloud credentials. Second layer behind the deny rules | `.claude/hooks/guard-files.sh` |
 | Permissions | Secret files unreadable/uneditable at any depth; `git push`/`reset --hard`/`clean` ask; bulk add/force push/`rm -rf` denied; hooks fail closed (`onFailure: block`) | `.claude/settings.json` |
+| Stop hook | With `team`/`high-security`: when Claude ends a turn with code changes, runs the quality gates; on FAIL sends Claude back with the output (capped at 3 blocks, then it must report `blocked`). Skips clean trees, prose-only changes and a tree that already passed | `.claude/hooks/stop-gate.sh` |
 | Secret scan | Built-in high-confidence patterns as a floor + **gitleaks** whenever installed (required in `team`/`high-security` and CI). Runs on Claude's commits, everyone's commits (git pre-commit hook), and in CI over the full history | `scan-secrets.sh`, `scripts/git-hooks/`, CI |
 | Profiles | `solo` / `team` / `high-security` tighten all of the above | `.claude/profiles/` |
 | CI | Quality gates on Linux, macOS and Windows; pinned, checksum-verified gitleaks over full history | `.github/workflows/checks.yml` |
@@ -163,7 +164,7 @@ Everything here, layer by layer, with tested cases and limits: [docs/security.md
 |---|---|---|---|
 | `architect-lite` | Normal, when unclear | Short plan with verified contracts of existing code | Sonnet |
 | `architect` | Deep, real design decision | Design, threat analysis, ADR | Opus |
-| `builder` | Deep; large Normal work; fixes | Implements code + tests | Sonnet |
+| `builder` | Parallel parts of Normal/Deep work; fix batches | Implements code + tests | Sonnet |
 | `reviewer-lite` | Normal | Blocking bugs, baseline, build/tests | Sonnet |
 | `reviewer` | Deep; stage-end | Full review (architecture, tests, data, contracts) | Opus |
 | `security-auditor` | Deep security work; stage-end; pre-deploy | Threat-focused audit, read-only | Opus |
@@ -193,6 +194,7 @@ python3 scripts/configure.py profile team   # solo (default) | team | high-secur
 |---|---|---|---|
 | Guards, secret denies, ask on destructive git | ✓ | ✓ | ✓ (asks become denies) |
 | gitleaks required, unconfigured gate fails | | ✓ | ✓ |
+| Quality gates enforced at turn end (Stop hook) | | ✓ | ✓ |
 | No direct push to main/master; `.github/`, `.claude/` edits ask | | ✓ | ✓ |
 | Dependency audit required, no WebFetch/curl/wget, bypass mode off, Bash sandbox | | | ✓ |
 
@@ -209,7 +211,10 @@ rule. The validator fails if `settings.json` drifts from its profile.
 | `workflow` | Claude loads it | Per-mode steps, review loops, stage-end, ADR/docs procedure — kept out of `CLAUDE.md` so it only loads when needed |
 | `verification-before-completion` | Claude loads it | Evidence before "done"/"passes" |
 | `writing-skills` | Claude loads it | Rules for writing agents/skills |
-| `writing-tests`, `project-conventions` | You, until filled in | Placeholders — fill in, then remove `disable-model-invocation` |
+| `writing-tests` | You, until filled in | Placeholder — fill in, then remove `disable-model-invocation` |
+
+Path-scoped conventions live in `.claude/rules/` (copy `api.md.example`), not in a skill:
+a rule with `paths:` loads by itself when Claude touches matching files.
 
 You don't need `/feature` — asking normally uses the same rules. `/feature` just makes
 each step visible.

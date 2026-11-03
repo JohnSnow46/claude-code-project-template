@@ -1,10 +1,12 @@
 {
-  "description": "Shared repo. Adds: gitleaks required, strict quality gates, no direct push to main/master, changes to CI and .claude/ config ask first.",
+  "description": "Shared repo. Adds: gitleaks required, strict quality gates enforced at turn end (Stop hook), no direct push to main/master, changes to CI and .claude/ config ask first.",
   "settings": {
     "env": {
       "CLAUDE_TEMPLATE_PROFILE": "team",
       "REQUIRE_GITLEAKS": "1",
-      "QUALITY_GATES_STRICT": "1"
+      "QUALITY_GATES_STRICT": "1",
+      "CLAUDE_STOP_GATE": "1",
+      "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP": "3"
     },
     "permissions": {
       "ask": [

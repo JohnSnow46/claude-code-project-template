@@ -207,5 +207,31 @@ else
   echo "note: gitleaks not installed — gitleaks-layer test skipped (it runs in CI)"
 fi
 
+# ------------------------------------------------------------------- stop-gate
+stop="$root/.claude/hooks/stop-gate.sh"
+sg="$work/stopgate"; gate="$work/gate-result"  # gate result lives outside the repo
+mkdir -p "$sg/scripts"
+git -C "$sg" init -q
+git -C "$sg" config user.email t@example.com
+git -C "$sg" config user.name t
+printf 'echo "RESULT: $(cat %s)"; [ "$(cat %s)" = PASS ]\n' "$gate" "$gate" > "$sg/scripts/quality-gates.sh"
+git -C "$sg" add scripts && git -C "$sg" commit -q -m init
+stop_run() { # CLAUDE_STOP_GATE value -> exit code
+  (cd "$sg" && printf '{"hook_event_name":"Stop"}' | CLAUDE_STOP_GATE="$1" CLAUDE_PROJECT_DIR="$sg" bash "$stop" >/dev/null 2>&1; echo $?)
+}
+echo FAIL > "$gate"
+check 0 "stop-gate: clean tree skips the gates" "$(stop_run 1)"
+echo "notes" > "$sg/NOTES.md"
+check 0 "stop-gate: prose-only change skips the gates" "$(stop_run 1)"
+echo "x" > "$sg/app.js"
+check 0 "stop-gate: off unless CLAUDE_STOP_GATE=1" "$(stop_run 0)"
+check 2 "stop-gate: failing gates block the stop" "$(stop_run 1)"
+echo PASS > "$gate"
+check 0 "stop-gate: passing gates allow the stop" "$(stop_run 1)"
+echo FAIL > "$gate"
+check 0 "stop-gate: tree unchanged since a pass isn't re-run" "$(stop_run 1)"
+echo "y" >> "$sg/app.js"
+check 2 "stop-gate: a new change runs the gates again" "$(stop_run 1)"
+
 echo "hooks: $pass passed, $fail failed"
 [ "$fail" = 0 ]

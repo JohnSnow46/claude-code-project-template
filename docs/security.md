@@ -95,6 +95,7 @@ together with `settings.json`. The validator fails if they drift apart.
 | Guards, deny rules, ask on destructive git | ✓ | ✓ | ✓ (ask → deny) |
 | gitleaks required (`REQUIRE_GITLEAKS`) | — | ✓ | ✓ |
 | Strict gates: unconfigured gate = FAIL | — | ✓ | ✓ |
+| Stop hook runs the gates at turn end (`CLAUDE_STOP_GATE`, block cap 3) | — | ✓ | ✓ |
 | No direct push to main/master | — | ✓ | ✓ |
 | Edits to `.github/`, `.claude/` ask first | — | ✓ | ✓ |
 | Dependency audit required (`REQUIRE_DEP_AUDIT`) | — | — | ✓ |
@@ -152,4 +153,9 @@ denied, `.env.example` readable.
 - `sandbox.enabled` has no effect on native Windows.
 - Profile env vars apply after the folder is trusted, like most project `env`.
 - Whether Claude follows `CLAUDE.md` (modes, baseline, gates before "done") is not
-  deterministic. The reviewers and CI are the backstop.
+  deterministic. In `team`/`high-security` the `Stop` hook enforces the gates at turn
+  end; otherwise the reviewers and CI are the backstop.
+- Auto mode (the default in new terminal/VS Code sessions) is a classifier judging each
+  action, not a rule. Deny rules and `PreToolUse` hooks run before it and hold in every
+  mode, which is why every "never" in this template is a deny rule or a hook. Tuning
+  auto mode (`autoMode`) only works in `~/.claude/settings.json`, not in the project.

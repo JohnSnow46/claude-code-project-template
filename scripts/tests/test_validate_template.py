@@ -117,6 +117,26 @@ class ValidateTemplateTest(unittest.TestCase):
         self.edit(".claude/agents/performance-analyst.md", "tools: Read, Grep, Glob, Bash", "tools: Read, Edit, Bash")
         self.assertFails("must be read-only")
 
+    def test_agent_frontmatter_typo(self):
+        self.edit(".claude/agents/builder.md", "model: sonnet", "model: sonnet\nmax_turns: 5")
+        self.assertFails("unknown frontmatter field 'max_turns'")
+
+    def test_skill_frontmatter_typo(self):
+        self.edit(".claude/skills/commit/SKILL.md", "allowed-tools:", "allowed_tools:")
+        self.assertFails("unknown frontmatter field 'allowed_tools'")
+
+    def test_bad_effort(self):
+        self.edit(".claude/agents/security-auditor.md", "effort: high", "effort: extreme")
+        self.assertFails("effort must be one of")
+
+    def test_rule_frontmatter_typo(self):
+        (self.tmp / ".claude/rules/api.md").write_text("---\npath:\n  - src/**\n---\n- x\n", encoding="utf-8")
+        self.assertFails("unknown rule frontmatter field 'path'")
+
+    def test_stop_hook_script_must_exist(self):
+        (self.tmp / ".claude/hooks/stop-gate.sh").unlink()
+        self.assertFails("Stop hook runs missing .claude/hooks/stop-gate.sh")
+
     def test_unknown_model(self):
         self.edit(".claude/agents/builder.md", "model: sonnet", "model: gpt-4")
         self.assertFails("unknown model 'gpt-4'")
